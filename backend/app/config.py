@@ -1,0 +1,37 @@
+from functools import lru_cache
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Fixed embedding space for this schema. Changing models requires re-embedding
+# every article and reclustering; never mix incompatible vectors in one index.
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+EMBEDDING_SPACE = f"{EMBEDDING_MODEL}@{EMBEDDING_REVISION}"
+EMBEDDING_DIMENSIONS = 384
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    app_env: str = "development"
+    database_url: str = "postgresql+psycopg://news:news@localhost:5432/news"
+    redis_url: str = "redis://localhost:6379/0"
+    operator_api_key: str = ""
+    user_agent: str = "AINewsAggregator/0.1"
+    http_timeout_seconds: float = Field(20, gt=0, le=120)
+    http_max_bytes: int = Field(5_000_000, gt=0)
+    per_host_delay_seconds: float = Field(1, ge=0)
+    source_limit: int = Field(100, ge=1, le=500)
+    initial_lookback_days: int = Field(7, ge=1, le=30)
+    cluster_window_hours: int = Field(72, ge=1, le=168)
+    cluster_similarity: float = Field(0.85, gt=0, le=1)
+    simhash_distance: int = Field(3, ge=0, le=8)
+    simhash_min_words: int = Field(80, ge=30)
+    enrich_articles: bool = True
+    ingestion_interval_seconds: int = Field(1800, ge=60)
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

@@ -1,0 +1,69 @@
+[
+  {
+    "name": "ArXiv AI/ML",
+    "error": "ReadTimeout"
+  },
+  {
+    "name": "Hacker News",
+    "status": 200,
+    "items": 500
+  },
+  {
+    "name": "OpenAI",
+    "status": 200,
+    "feed_format": "rss20",
+    "entries": 1192
+  },
+  {
+    "name": "Google DeepMind",
+    "status": 200,
+    "feed_format": "rss20",
+    "entries": 100
+  },
+  {
+    "name": "Google Research",
+    "status": 200,
+    "feed_format": "rss20",
+    "entries": 100
+  },
+  {
+    "name": "Hugging Face",
+    "status": 200,
+    "feed_format": "rss20",
+    "entries": 861
+  },
+  {
+    "name": "Microsoft Research",
+    "status": 200,
+    "feed_format": "rss20",
+    "entries": 10
+  },
+  {
+    "name": "AWS Machine Learning",
+    "error": "ReadTimeout"
+  },
+  {
+    "name": "Databricks",
+    "status": 200,
+    "feed_format": "rss20",
+    "entries": 10
+  },
+  {
+    "name": "GitHub AI & ML",
+    "status": 200,
+    "feed_format": "rss20",
+    "entries": 10
+  },
+  {
+    "name": "Cloudflare AI",
+    "status": 200,
+    "feed_format": "rss20",
+    "entries": 20
+  },
+  {
+    "name": "Google AI",
+    "status": 200,
+    "feed_format": "rss20",
+    "entries": 20
+  }
+]

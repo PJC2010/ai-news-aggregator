@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0"><channel><title>Example AI Lab</title><link>https://lab.example</link>
+<description>Test fixture, not real news</description>
+<item><title>New language model &amp; weights</title><link>https://lab.example/model?utm_source=rss</link>
+<guid>release-1</guid><pubDate>Sun, 13 Sep 2026 10:00:00 GMT</pubDate>
+<description><![CDATA[<p>Weights are available for <b>research</b>.</p>]]></description></item>
+<item><title>Undated research note</title><link>/note</link><description>Read the note.</description></item>
+</channel></rss>

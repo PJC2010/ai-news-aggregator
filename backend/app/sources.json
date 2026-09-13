@@ -1,0 +1,14 @@
+[
+  {"name":"ArXiv AI/ML","url":"https://export.arxiv.org/api/query","type":"arxiv","category":"research","authority_score":9,"config":{}},
+  {"name":"Hacker News","url":"https://hacker-news.firebaseio.com/v0","type":"hackernews","category":"community","authority_score":5,"config":{}},
+  {"name":"OpenAI","url":"https://openai.com/news/rss.xml","type":"rss","category":"company","authority_score":10,"config":{}},
+  {"name":"Google DeepMind","url":"https://deepmind.google/blog/rss.xml","type":"rss","category":"company","authority_score":10,"config":{}},
+  {"name":"Google Research","url":"https://research.google/blog/rss/","type":"rss","category":"company","authority_score":9,"config":{}},
+  {"name":"Hugging Face","url":"https://huggingface.co/blog/feed.xml","type":"rss","category":"company","authority_score":9,"config":{}},
+  {"name":"Microsoft Research","url":"https://www.microsoft.com/en-us/research/feed/","type":"rss","category":"company","authority_score":9,"config":{}},
+  {"name":"AWS Machine Learning","url":"https://aws.amazon.com/blogs/machine-learning/feed/","type":"rss","category":"company","authority_score":8,"config":{}},
+  {"name":"Databricks","url":"https://www.databricks.com/feed","type":"rss","category":"company","authority_score":8,"config":{"ai_filter":true}},
+  {"name":"GitHub AI & ML","url":"https://github.blog/ai-and-ml/feed/","type":"rss","category":"company","authority_score":8,"config":{}},
+  {"name":"Cloudflare AI","url":"https://blog.cloudflare.com/tag/ai/rss/","type":"rss","category":"company","authority_score":8,"config":{}},
+  {"name":"Google AI","url":"https://blog.google/technology/ai/rss/","type":"rss","category":"company","authority_score":9,"config":{}}
+]

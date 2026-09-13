@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>ArXiv fixture</title><id>fixture</id><updated>2026-09-13T10:00:00Z</updated>
+<entry><id>http://arxiv.org/abs/2609.12345v1</id><title>A language model paper</title>
+<summary>An abstract describing a fictional research result.</summary>
+<published>2026-09-13T08:00:00Z</published><updated>2026-09-13T09:00:00Z</updated>
+<author><name>Example Author</name></author><category term="cs.CL"/><category term="cs.LG"/>
+<link href="https://arxiv.org/abs/2609.12345v1" rel="alternate" type="text/html"/>
+</entry></feed>
