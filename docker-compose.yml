@@ -1,6 +1,7 @@
 name: ai-news-aggregator
 
 x-backend: &backend
+  image: ai-news-aggregator-backend:local
   build: ./backend
   env_file: .env
   environment:

@@ -32,3 +32,9 @@ jobs:
       - run: ruff check app tests migrations
       - run: ruff format --check app tests migrations
       - run: pytest -q
+      - name: Build the production image
+        run: docker build --tag ai-news-backend:ci .
+      - name: Verify the image runs as the application user
+        run: >-
+          docker run --rm --entrypoint python ai-news-backend:ci -c
+          "import os; from app.main import app; assert os.geteuid() == 10001"

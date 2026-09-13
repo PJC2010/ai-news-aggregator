@@ -8,7 +8,7 @@ COPY pyproject.toml alembic.ini ./
 COPY app ./app
 COPY migrations ./migrations
 RUN pip install --no-cache-dir --no-deps . && \
-    useradd --create-home --uid 10001 news && mkdir -p /models /state && chown -R news:news /models /state
-USER news
+    useradd --create-home --uid 10001 ainews && mkdir -p /models /state && chown -R ainews:ainews /models /state
+USER ainews
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
