@@ -15,17 +15,20 @@ Current local suite: **46 passed, no skips, 2 dependency deprecation warnings**,
 - The migration now executes successfully on a real PostgreSQL 16/pgvector container. Alembic schema comparison, 384-dimensional vector persistence, primary membership, and advisory-lock acquisition/exclusion/release pass against the disposable `news_test` database.
 - Added regression coverage and fixes for compressed HTTP responses being decoded twice and SimHash matching articles outside the seven-day window when newer coverage arrived first. Gzip/deflate decoding retains feed validators and enforces the decompressed response size limit; deduplication boundaries pass in both arrival orders.
 - PostgreSQL and Redis Compose services start and report healthy. This Mac already runs a PostgreSQL server on 5432; the project's ignored `.env` uses 55432 via the new optional `POSTGRES_PORT` setting.
-- Upstream source probes: Hacker News and nine RSS feeds returned usable responses. ArXiv and AWS timed out. Full details are in `SOURCES.md`.
+- The shared backend Docker image builds successfully. Migration and source-seeding containers exit successfully, the API reports ready at `http://localhost:8000/health/ready`, and its process runs as UID 10001. The build fixes a collision with Debian's existing `news` account and reuses one image across all Python services.
+- Real MiniLM warmup succeeds inside the Docker image, using the shared model volume and the pinned revision; the output contains 384 dimensions.
+- GitHub Actions passed for the [initial upload](https://github.com/PJC2010/ai-news-aggregator/actions/runs/34779633735) and the [container fixes](https://github.com/PJC2010/ai-news-aggregator/actions/runs/34779880549). The latter also builds the production image and verifies its non-root application user.
+- Local protected source checks now pass for Hacker News and all ten RSS feeds. ArXiv still times out. The HN probe checks only two top stories and returned no matching AI items in that sample. Detailed results are in `SOURCES.md` and `local-source-check.json`.
+- A real Celery Beat schedule dispatched one task through Redis to a Celery worker. With `SOURCE_LIMIT=10` and HTML enrichment disabled for the smoke run, it fetched 101 candidates, filtered 67, and stored/embedded/clustered 34 articles into 34 distinct clusters in about 49 seconds. The run correctly reported `partial`: ArXiv returned HTTP 429, while other sources completed. No articles were deduplicated in this small sample; deduplication and multi-article clustering remain covered by controlled tests. See [live-run.json](live-run.json).
+- After ingestion, authenticated cluster/source/run endpoints returned successfully, unauthenticated cluster access returned HTTP 401, and API readiness passed. The database contains 34 articles, 34 embeddings, 34 memberships, and 34 observations. Temporary scheduler/worker containers were stopped and removed after the one scheduled run. API, PostgreSQL, and Redis remain available locally.
 
 ## Not yet verified
 
-- Backend image build, API container startup, and full-stack verification are in progress during the local follow-up.
-- A GitHub Actions workflow provisions pgvector and runs all tests; remote execution is pending the project upload.
-- A complete live fetch → PostgreSQL → embedding → cluster run and Celery/Redis scheduling remain to be exercised on a Docker-capable host.
-- The original cloud runtime restricted direct source DNS. Local direct fetches work, and source checks are being repeated after the compressed-response fix. Public-address checks remain enabled.
+- An all-source successful live run remains pending: local ArXiv probes time out, and the container ingestion receives HTTP 429. The original cloud runtime also restricted direct source DNS; local protected fetching otherwise works.
+- The live smoke run did not exercise HTML enrichment, the default 100-item source limit, long-running scheduling, or outage recovery under production load. The one-off 60-second scheduler test does not change the configured 30-minute default interval.
 - Semantic clustering quality, recall during source outages, real workload performance, and source authority calibration need a labeled sample and live traffic.
 - Same-publisher title corrections and equal-length/shorter body corrections are not yet propagated reliably. An update policy must distinguish publisher corrections from short feed excerpts before replacing previously extracted full text.
 
 The current dependency set emits two deprecation warnings from the FastAPI/Starlette test-client stack. They do not fail the tests; they should be resolved during a future dependency upgrade.
 
-No paid API calls, customer accounts, email sends, billing actions, or deployments were performed.
+No paid API calls, customer accounts, email sends, billing actions, or public deployments were performed.

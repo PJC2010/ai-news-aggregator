@@ -1,0 +1,42 @@
+{
+  "checked_at": "2026-09-13T20:14:32.895593+00:00",
+  "trigger": "Celery Beat -> Redis -> Celery worker",
+  "settings": {
+    "source_limit": 10,
+    "enrich_articles": false,
+    "test_scheduler_interval_seconds": 60
+  },
+  "run": {
+    "id": "f7e37960-da62-447b-9e8b-b18386191cc5",
+    "status": "partial",
+    "started_at": "2026-09-13T20:13:44.823241+00:00",
+    "finished_at": "2026-09-13T20:14:32.895593+00:00",
+    "counts": {
+      "created": 34,
+      "fetched": 101,
+      "embedded": 34,
+      "filtered": 67,
+      "clustered": 34,
+      "deduplicated": 0,
+      "extraction_fallbacks": 0
+    },
+    "errors": [
+      {
+        "error": "Source fetch failed: HTTPStatusError",
+        "source": "ArXiv AI/ML"
+      }
+    ]
+  },
+  "database_totals": {
+    "articles": 34,
+    "clusters": 34,
+    "cluster_articles": 34,
+    "article_observations": 34
+  },
+  "embedded_articles": 34,
+  "api_ready": {
+    "status": "ready"
+  },
+  "unauthenticated_clusters_status": 401,
+  "arxiv_upstream_status": 429
+}

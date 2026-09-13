@@ -1,0 +1,73 @@
+[
+  {
+    "source": "ArXiv AI/ML",
+    "status": "failed",
+    "error": "ReadTimeout: "
+  },
+  {
+    "source": "Hacker News",
+    "status": "ok",
+    "items": 0,
+    "warnings": []
+  },
+  {
+    "source": "OpenAI",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  },
+  {
+    "source": "Google DeepMind",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  },
+  {
+    "source": "Google Research",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  },
+  {
+    "source": "Hugging Face",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  },
+  {
+    "source": "Microsoft Research",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  },
+  {
+    "source": "AWS Machine Learning",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  },
+  {
+    "source": "Databricks",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  },
+  {
+    "source": "GitHub AI & ML",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  },
+  {
+    "source": "Cloudflare AI",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  },
+  {
+    "source": "Google AI",
+    "status": "ok",
+    "items": 2,
+    "warnings": []
+  }
+]

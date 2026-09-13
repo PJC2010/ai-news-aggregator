@@ -2,7 +2,7 @@
 
 The first implementation milestone from `SPEC.md`: fetch AI news, retain source evidence, deduplicate articles, and group related coverage into persistent events.
 
-This is a backend pipeline foundation. The two-pass analysis, customer accounts, Next.js dashboard, email delivery, and Stripe billing are the next milestones. There is no deployed service yet.
+This is a backend pipeline foundation. The two-pass analysis, customer accounts, Next.js dashboard, email delivery, and Stripe billing are the next milestones. There is no publicly deployed service yet.
 
 ## Implemented
 
@@ -32,14 +32,14 @@ cp .env.example .env
 Set `OPERATOR_API_KEY` in `.env` to a random value. You can generate one with `python -c "import secrets; print(secrets.token_urlsafe(32))"`. This only protects the development inspection API. Customer authentication will use Clerk or Supabase as specified.
 
 ```bash
-docker compose build
+docker compose build api
 docker compose up -d postgres redis api
 docker compose run --rm api ai-news check-sources
 docker compose run --rm api ai-news warm-model
 docker compose run --rm api ai-news ingest
 ```
 
-The API depends on completed migration and source-seeding services. `check-sources` exits nonzero if a source fails, and `ingest` exits nonzero for a partial run while keeping successfully ingested records. Inspect source/run errors before proceeding if either command reports failures.
+All Python services reuse the backend image built by `docker compose build api`. The API depends on completed migration and source-seeding services. `check-sources` exits nonzero if a source fails, and `ingest` exits nonzero for a partial run while keeping successfully ingested records. Inspect source/run errors before proceeding if either command reports failures.
 
 Open [the API documentation](http://localhost:8000/docs). Inspect a first result:
 
@@ -110,7 +110,7 @@ The default tests use in-memory SQLite and controlled fetch/embedding fixtures t
 TEST_DATABASE_URL=postgresql+psycopg://news:news@localhost:5432/news_test pytest -q -m postgres
 ```
 
-Create that disposable database first. `.github/workflows/test.yml` provisions it with pgvector and runs all tests in GitHub Actions. The workflow has been authored but has not been executed on a remote repository.
+Create that disposable database first. `.github/workflows/test.yml` provisions it with pgvector and runs all tests in GitHub Actions. It also builds the backend image and checks its non-root runtime user. The initial test workflow passed on GitHub; see the validation log for subsequent build and runtime results.
 
 See [validation results](docs/VALIDATION.md) for checks actually performed in the implementation environment.
 
@@ -128,7 +128,7 @@ See [validation results](docs/VALIDATION.md) for checks actually performed in th
 
 ## Next milestones
 
-1. Run the full stack on a Docker-capable host; complete the PostgreSQL gate, source checks, and one real ingestion run. Review clustered events and resolve remaining source coverage gaps.
+1. Resolve ArXiv timeouts/rate limiting and remaining source coverage gaps, then complete an all-source successful run. The Docker/PostgreSQL gates and one scheduled live run now pass their supported checks; the live run retained 34 articles but reported `partial` for ArXiv. Review real events and expand beyond the bounded smoke test. See [the handoff](docs/HANDOFF.md).
 2. **Week 3:** implement cluster-input hashing and two-pass summary/structured analysis, record model/prompt versions and costs, add ranking, evaluate HDBSCAN against labeled events. Personalization remains outside shared analysis.
 3. **Week 4:** Clerk/Supabase user identity, topic preferences and tier limits, Next.js dashboard, local-time daily digests, Resend/Postmark, Stripe subscriptions and verified webhooks.
 

@@ -4,9 +4,23 @@ Configuration lives in `backend/app/sources.json`. `ai-news seed` inserts missin
 
 The registry contains two API sources and ten company-blog feeds. The first implementation uses feeds with known first-party endpoints; it does not yet cover every named company in the specification.
 
-## Source checks on 2026-09-13
+## Local application checks on 2026-09-13
 
-Application fetches could not resolve external domains with this workspace's direct DNS. A separate read-only probe using the runtime's configured outbound proxy checked the fixed registry endpoints. The results below describe those upstream responses, not a completed database ingestion run. The protected application fetcher was not weakened to make this environment pass.
+Local macOS checks used the application's protected `FetchClient`, with direct connections and public-address validation. The [recorded results](local-source-check.json) show:
+
+- All ten RSS feeds returned two parsed items each. AWS Machine Learning now responds successfully locally.
+- Hacker News returned successfully with zero AI matches among the first two top stories checked. This small sample does not measure overall AI coverage.
+- ArXiv returned `ReadTimeout`. Separate basic API queries to both `export.arxiv.org` and `arxiv.org` also timed out locally.
+
+The subsequent scheduled Docker ingestion received HTTP 429 from ArXiv. Other sources completed, and the pipeline preserved their articles while marking the run `partial`; see [live-run.json](live-run.json).
+
+The checks exposed a double-decompression bug in compressed HTTP responses. Normalizing headers after decoding fixed six RSS failures: OpenAI, Hugging Face, Databricks, GitHub AI & ML, Cloudflare AI, and Google AI. Regression tests cover gzip, deflate, response metadata, and decoded-size limits.
+
+These results cover source fetching and parsing. See [validation results](VALIDATION.md) for database and full-pipeline checks.
+
+## Historical cloud probe on 2026-09-13
+
+The original cloud workspace could not resolve external domains through direct DNS. A separate read-only probe using its outbound proxy checked the registry endpoints. The [original probe record](source-probe.json) and results below are preserved as historical upstream-response evidence.
 
 | Source | Endpoint | Probe result |
 | --- | --- | --- |
@@ -17,7 +31,7 @@ Application fetches could not resolve external domains with this workspace's dir
 | Google Research | https://research.google/blog/rss/ | HTTP 200; RSS 2.0, 100 entries |
 | Hugging Face | https://huggingface.co/blog/feed.xml | HTTP 200; RSS 2.0, 861 entries |
 | Microsoft Research | https://www.microsoft.com/en-us/research/feed/ | HTTP 200; RSS 2.0, 10 entries |
-| AWS Machine Learning | https://aws.amazon.com/blogs/machine-learning/feed/ | Timed out; recheck on the deployment host |
+| AWS Machine Learning | https://aws.amazon.com/blogs/machine-learning/feed/ | Timed out in the cloud probe |
 | Databricks | https://www.databricks.com/feed | HTTP 200; RSS 2.0, 10 entries; AI keyword filter enabled |
 | GitHub AI & ML | https://github.blog/ai-and-ml/feed/ | HTTP 200; RSS 2.0, 10 entries |
 | Cloudflare AI | https://blog.cloudflare.com/tag/ai/rss/ | HTTP 200; RSS 2.0, 20 entries |
