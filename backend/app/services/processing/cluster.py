@@ -45,6 +45,9 @@ def invalidate_analysis(cluster):
     cluster.analysis_input_hash = None
     cluster.significance_score = None
     cluster.event_type = None
+    cluster.analysis_status = "pending"
+    cluster.analysis_error = None
+    cluster.analyzed_at = None
 
 
 def refresh_cluster(session, cluster_id):

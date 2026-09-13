@@ -1,6 +1,7 @@
 from functools import lru_cache
+from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Fixed embedding space for this schema. Changing models requires re-embedding
@@ -30,6 +31,15 @@ class Settings(BaseSettings):
     simhash_min_words: int = Field(80, ge=30)
     enrich_articles: bool = True
     ingestion_interval_seconds: int = Field(1800, ge=60)
+    deepseek_api_key: SecretStr = SecretStr("")
+    analysis_enabled: bool = False
+    summary_model: Literal["deepseek-flash", "deepseek-v4-pro"] = "deepseek-flash"
+    analysis_model: Literal["deepseek-flash", "deepseek-v4-pro"] = "deepseek-v4-pro"
+    analysis_cluster_limit: int = Field(10, ge=1, le=100)
+    analysis_budget_usd: float = Field(0.25, gt=0, le=100, allow_inf_nan=False)
+    analysis_timeout_seconds: float = Field(60, gt=0, le=180)
+    summary_max_tokens: int = Field(768, ge=128, le=4096)
+    analysis_max_tokens: int = Field(2048, ge=256, le=8192)
 
 
 @lru_cache

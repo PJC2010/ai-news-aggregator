@@ -2,7 +2,7 @@
 
 Configuration lives in `backend/app/sources.json`. `ai-news seed` inserts missing source URLs without overwriting an operator's current configuration or activation state. A new feed can be added to that file and seeded; existing source records are edited in PostgreSQL during this milestone.
 
-The registry contains two API sources and ten company-blog feeds. The first implementation uses feeds with known first-party endpoints; it does not yet cover every named company in the specification.
+The registry contains two API sources and eleven company-blog feeds. The first implementation uses feeds with known first-party endpoints; it does not yet cover every named company in the specification.
 
 ## Local application checks on 2026-09-13
 
@@ -17,6 +17,27 @@ The subsequent scheduled Docker ingestion received HTTP 429 from ArXiv. Other so
 The checks exposed a double-decompression bug in compressed HTTP responses. Normalizing headers after decoding fixed six RSS failures: OpenAI, Hugging Face, Databricks, GitHub AI & ML, Cloudflare AI, and Google AI. Regression tests cover gzip, deflate, response metadata, and decoded-size limits.
 
 These results cover source fetching and parsing. See [validation results](VALIDATION.md) for database and full-pipeline checks.
+
+## Source reliability follow-up on 2026-09-13
+
+The [follow-up probe record](source-check-followup.json) records direct, bounded application fetches. ArXiv's official combined RSS endpoint, `https://rss.arxiv.org/rss/cs.AI+cs.LG+cs.CL+cs.CV`, returned HTTP 200 and valid RSS 2.0 with zero entries on Sunday, September 13. An empty weekend feed is expected: the [official RSS specification](https://info.arxiv.org/help/rss_specifications.html) documents empty feeds on weekends and some holidays. This confirms the endpoint works, not that it supplied papers during this check.
+
+The ArXiv adapter now uses this RSS endpoint after an API timeout, HTTP 429, or HTTP 5xx. It records `fetch_mode: rss_fallback`, adds a warning, and labels the coverage limit in source state. API success records `fetch_mode: api`. Invalid API XML, API error entries, and other HTTP 4xx errors still fail without switching feeds. If the fallback fails or returns malformed XML, the source fails honestly. A long `Retry-After` delays recovery until a later scheduled run; shorter cooldowns are honored before RSS access.
+
+RSS is the latest announcement snapshot, not a replacement for the API's complete requested lookback window. It can contain revisions and cross-listings. The adapter keeps categories, authors, announcement timestamps and type when present, retains the feed GUID, and canonicalizes paper URLs for existing deduplication. It filters dates outside the requested lookback and bounds returned items. [ArXiv documents the combined-category URL format](https://info.arxiv.org/help/rss.html) and an [aggregate limit of one request every three seconds](https://info.arxiv.org/help/api/tou.html); the fallback maintains a 3.1-second transition interval and uses the same protected `FetchClient` as existing feed adapters.
+
+The initial RSS probe accidentally applied the HTML extraction guard, which rejects a missing robots file. A follow-up request confirmed `https://rss.arxiv.org/robots.txt` returns HTTP 404, then verified the explicitly published feed under [RFC 9309's unavailable-robots rule](https://www.rfc-editor.org/rfc/rfc9309.html#section-2.3.1.3). No proxy, private-address bypass, alternate identity, or change to the HTML extraction guard was used.
+
+The company checks found:
+
+| Publisher | First-party evidence | Result |
+| --- | --- | --- |
+| Mistral | Its news page advertises `https://mistral.ai/news/rss` with `rel=alternate` and RSS media type | HTTP 200; valid RSS 2.0 with 86 entries; usable first-party feed |
+| Anthropic | Newsroom HTML has no advertised RSS/Atom link; `/news/rss.xml` was checked | Candidate URL returned HTTP 404; no usable feed verified |
+| Meta AI | Blog HTML has no advertised RSS/Atom link; `/blog/rss/` was checked | Candidate URL returned HTTP 404; no usable feed verified |
+| Cohere | Blog HTML has no advertised RSS/Atom link; `/blog/rss.xml` was checked | Candidate redirected to the HTML blog page, not a feed |
+
+These bounded checks do not establish that Anthropic, Meta AI, or Cohere have no feeds. Their coverage remains unresolved; no unverified endpoint or new scraper was added. Mistral's verified feed is now in the registry. The subsequent Docker ingestion completed all eleven company feeds and HN; ArXiv used its empty Sunday RSS snapshot and kept the explicit partial-coverage warning. The run added five articles, bringing the stored total to 39. See [the live follow-up record](analysis-live-check.json).
 
 ## Historical cloud probe on 2026-09-13
 
@@ -41,7 +62,7 @@ Feed counts are observed response sizes, not article totals ingested. News publi
 
 ## Coverage gaps to resolve
 
-Anthropic, Meta AI, Mistral, and Cohere are named P0 companies in the spec but are not configured in this first registry. Their official RSS/API endpoints have not been verified for this implementation. Add verified first-party feeds or explicitly reviewed fallback adapters in the next pipeline iteration. This is a recorded coverage gap, not a claim that these publishers lack feeds.
+Anthropic, Meta AI, Mistral, and Cohere were missing from the initial registry despite being named P0 companies in the spec. Mistral's first-party RSS endpoint is now verified above. Anthropic, Meta AI, and Cohere still need verified first-party feeds or reviewed adapters. This is a recorded coverage gap, not a claim that these publishers lack feeds.
 
 Hacker News scans top stories rather than an exhaustive feed, and its AI relevance filter is a transparent keyword heuristic. ArXiv uses submitted date for a bounded rolling snapshot, so revisions to older papers are not an exhaustive update stream. Feeds without dates use fetch time for event placement; relative links are resolved against the feed URL.
 

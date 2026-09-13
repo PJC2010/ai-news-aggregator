@@ -1,0 +1,327 @@
+{
+  "checked_at": "2026-09-13T23:12:56.829433+00:00",
+  "health": {
+    "status": "ready"
+  },
+  "checks": {
+    "tests_passed": 219,
+    "postgres_migration": true,
+    "ruff_lint_and_format": true,
+    "non_root_uid": 10001,
+    "model_requests_total": 4,
+    "final_replay_new_calls": 0
+  },
+  "initial_run": {
+    "run_id": "dd31cd2a-9121-4079-bdd5-40cb17822314",
+    "status": "succeeded",
+    "counts": {
+      "ready": 1,
+      "cached": 0,
+      "summary_cache_hits": 0,
+      "analysis_cache_hits": 0,
+      "failed": 0,
+      "insufficient_evidence": 2
+    },
+    "errors": [],
+    "estimated_cost_usd": 0.0049186199999999985,
+    "pricing_version": "deepseek-peak-usd-2026-09-13"
+  },
+  "initial_replay": {
+    "run_id": "af684b67-968a-4c14-b2c0-08c4fb41a198",
+    "status": "succeeded",
+    "counts": {
+      "ready": 0,
+      "cached": 1,
+      "summary_cache_hits": 0,
+      "analysis_cache_hits": 0,
+      "failed": 0,
+      "insufficient_evidence": 0
+    },
+    "errors": [],
+    "estimated_cost_usd": 0,
+    "pricing_version": "deepseek-peak-usd-2026-09-13"
+  },
+  "final_run": {
+    "run_id": "13e7af10-7b10-42f6-824d-56c68c3c0f0e",
+    "status": "succeeded",
+    "counts": {
+      "ready": 1,
+      "cached": 0,
+      "summary_cache_hits": 0,
+      "analysis_cache_hits": 0,
+      "failed": 0,
+      "insufficient_evidence": 0
+    },
+    "errors": [],
+    "estimated_cost_usd": 0.004782312,
+    "pricing_version": "deepseek-peak-usd-2026-09-13"
+  },
+  "final_replay": {
+    "run_id": "b7bfbf39-8d73-4730-a31e-dd29a4e4a76e",
+    "status": "succeeded",
+    "counts": {
+      "ready": 0,
+      "cached": 1,
+      "summary_cache_hits": 0,
+      "analysis_cache_hits": 0,
+      "failed": 0,
+      "insufficient_evidence": 0
+    },
+    "errors": [],
+    "estimated_cost_usd": 0,
+    "pricing_version": "deepseek-peak-usd-2026-09-13"
+  },
+  "estimated_total_cost_usd": 0.009700932,
+  "cost_note": "Conservative peak-rate estimates; attempts without usage retain their pre-request reservation. Provider billing is authoritative.",
+  "automatic_analysis_enabled": false,
+  "cluster": {
+    "id": "16427ae5-f7d8-4fa6-86a9-380aaed65b5e",
+    "topic": "Monitoring production agent lifecycle with AWS DevOps Agent and AgentCore Evaluations",
+    "analysis_status": "ready",
+    "event_type": "other",
+    "significance_score": 3,
+    "rank_version": "editorial-v1"
+  },
+  "calls": [
+    {
+      "id": "30ab36d9-1298-4bfb-90a9-09a33be6f1eb",
+      "cluster_id": "16427ae5-f7d8-4fa6-86a9-380aaed65b5e",
+      "stage": "analysis",
+      "status": "succeeded",
+      "model": "deepseek-v4-pro",
+      "returned_model": "deepseek-v4-pro",
+      "prompt_version": "analysis-v2",
+      "input_tokens": 2738,
+      "cached_input_tokens": 0,
+      "output_tokens": 220,
+      "estimated_cost_usd": 0.004485360000000001,
+      "cost_is_upper_bound": false,
+      "pricing_version": "deepseek-peak-usd-2026-09-13",
+      "error": null,
+      "created_at": "2026-09-13T23:11:57.854292+00:00"
+    },
+    {
+      "id": "085546bc-f38a-4457-8f04-126008c8089f",
+      "cluster_id": "16427ae5-f7d8-4fa6-86a9-380aaed65b5e",
+      "stage": "summary",
+      "status": "succeeded",
+      "model": "deepseek-flash",
+      "returned_model": "deepseek-flash",
+      "prompt_version": "summary-v1",
+      "input_tokens": 2050,
+      "cached_input_tokens": 1792,
+      "output_tokens": 174,
+      "estimated_cost_usd": 0.000296952,
+      "cost_is_upper_bound": false,
+      "pricing_version": "deepseek-peak-usd-2026-09-13",
+      "error": null,
+      "created_at": "2026-09-13T23:11:55.749397+00:00"
+    },
+    {
+      "id": "c1356df1-cccb-4614-afec-2b7517114bfc",
+      "cluster_id": "16427ae5-f7d8-4fa6-86a9-380aaed65b5e",
+      "stage": "analysis",
+      "status": "succeeded",
+      "model": "deepseek-v4-pro",
+      "returned_model": "deepseek-v4-pro",
+      "prompt_version": "analysis-v1",
+      "input_tokens": 2611,
+      "cached_input_tokens": 0,
+      "output_tokens": 170,
+      "estimated_cost_usd": 0.00411972,
+      "cost_is_upper_bound": false,
+      "pricing_version": "deepseek-peak-usd-2026-09-13",
+      "error": null,
+      "created_at": "2026-09-13T23:03:36.452020+00:00"
+    },
+    {
+      "id": "9b102c81-e7ae-47be-b53d-36b8afde13c1",
+      "cluster_id": "16427ae5-f7d8-4fa6-86a9-380aaed65b5e",
+      "stage": "summary",
+      "status": "succeeded",
+      "model": "deepseek-flash",
+      "returned_model": "deepseek-flash",
+      "prompt_version": "summary-v1",
+      "input_tokens": 2003,
+      "cached_input_tokens": 0,
+      "output_tokens": 165,
+      "estimated_cost_usd": 0.0007989,
+      "cost_is_upper_bound": false,
+      "pricing_version": "deepseek-peak-usd-2026-09-13",
+      "error": null,
+      "created_at": "2026-09-13T23:03:34.175752+00:00"
+    }
+  ],
+  "sources": [
+    {
+      "id": "2eb9bc01-febf-4d8a-9678-01c75b8e6fdd",
+      "name": "ArXiv AI/ML",
+      "url": "https://export.arxiv.org/api/query",
+      "type": "arxiv",
+      "fetch_mode": "rss_fallback",
+      "scope_note": "ArXiv RSS contains only the latest announcement snapshot, including revisions and cross-listings; it does not cover the complete requested lookback. The feed can be empty on weekends and holidays.",
+      "is_active": true,
+      "last_fetched_at": null,
+      "last_error": "API HTTP 429; used RSS fallback. ArXiv RSS contains only the latest announcement snapshot, including revisions and cross-listings; it does not cover the complete requested lookback. The feed can be empty on weekends and holidays."
+    },
+    {
+      "id": "73b2d306-1864-4570-b271-a5fdefb9fdcb",
+      "name": "AWS Machine Learning",
+      "url": "https://aws.amazon.com/blogs/machine-learning/feed/",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:24.230679+00:00",
+      "last_error": null
+    },
+    {
+      "id": "3a1da889-1cf6-490f-800c-2d2e6a37d46d",
+      "name": "Cloudflare AI",
+      "url": "https://blog.cloudflare.com/tag/ai/rss/",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:24.311879+00:00",
+      "last_error": null
+    },
+    {
+      "id": "129ba801-2733-40d5-806d-8891fedb1e9c",
+      "name": "Databricks",
+      "url": "https://www.databricks.com/feed",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:24.569278+00:00",
+      "last_error": null
+    },
+    {
+      "id": "f1327ca5-9041-4776-bf90-407ff603b304",
+      "name": "GitHub AI & ML",
+      "url": "https://github.blog/ai-and-ml/feed/",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:24.651237+00:00",
+      "last_error": null
+    },
+    {
+      "id": "627d1048-dc51-4d3d-aeca-050c620e5c8f",
+      "name": "Google AI",
+      "url": "https://blog.google/technology/ai/rss/",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:22.853864+00:00",
+      "last_error": null
+    },
+    {
+      "id": "638a5422-84cb-44dd-b2f0-0236f37fd7aa",
+      "name": "Google DeepMind",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:10.120213+00:00",
+      "last_error": null
+    },
+    {
+      "id": "a598b12b-6a8d-465f-8a7a-a65d9cdeace6",
+      "name": "Google Research",
+      "url": "https://research.google/blog/rss/",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:23.404245+00:00",
+      "last_error": null
+    },
+    {
+      "id": "78999ac8-be4c-4d52-8751-1ddbe1d5df21",
+      "name": "Hacker News",
+      "url": "https://hacker-news.firebaseio.com/v0",
+      "type": "hackernews",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:35.040511+00:00",
+      "last_error": null
+    },
+    {
+      "id": "e8b36868-e393-461c-a338-4dced3d35ed9",
+      "name": "Hugging Face",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:23.522431+00:00",
+      "last_error": null
+    },
+    {
+      "id": "089f5da4-2cc0-46a6-9c1a-fac79fec04d2",
+      "name": "Microsoft Research",
+      "url": "https://www.microsoft.com/en-us/research/feed/",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:23.882883+00:00",
+      "last_error": null
+    },
+    {
+      "id": "505d72f3-cb96-4344-ab8b-abb9c11160d5",
+      "name": "Mistral AI",
+      "url": "https://mistral.ai/news/rss",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:24.084148+00:00",
+      "last_error": null
+    },
+    {
+      "id": "8896dbf4-37b7-4e89-9a81-0bedcabab2fd",
+      "name": "OpenAI",
+      "url": "https://openai.com/news/rss.xml",
+      "type": "rss",
+      "fetch_mode": null,
+      "scope_note": null,
+      "is_active": true,
+      "last_fetched_at": "2026-09-13T23:05:11.698463+00:00",
+      "last_error": null
+    }
+  ],
+  "ingestion": {
+    "run_id": "888038fc-e294-4ef0-9960-bf816f5b395e",
+    "status": "partial",
+    "counts": {
+      "fetched": 51,
+      "created": 5,
+      "deduplicated": 14,
+      "filtered": 32,
+      "embedded": 5,
+      "clustered": 5,
+      "extraction_fallbacks": 0
+    },
+    "errors": [
+      {
+        "source": "ArXiv AI/ML",
+        "error": "API HTTP 429; used RSS fallback. ArXiv RSS contains only the latest announcement snapshot, including revisions and cross-listings; it does not cover the complete requested lookback. The feed can be empty on weekends and holidays."
+      }
+    ]
+  },
+  "database_counts": {
+    "articles": 39,
+    "embeddings": 39,
+    "clusters": 39,
+    "memberships": 39,
+    "observations": 39,
+    "sources": 13
+  }
+}

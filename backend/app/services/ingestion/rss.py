@@ -33,6 +33,7 @@ def parse_feed(payload: bytes, base_url: str, limit: int) -> list[Candidate]:
                 url=urljoin(base_url, link),
                 title=title,
                 body=body,
+                body_kind="feed_full" if entry.get("content") else "feed_summary",
                 author=entry.get("author"),
                 published_at=entry_date(entry),
                 external_id=str(entry.get("id") or urljoin(base_url, link)),

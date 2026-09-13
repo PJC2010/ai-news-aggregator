@@ -1,0 +1,190 @@
+{
+  "method": "Protected FetchClient; direct public-address validation, size limits, pacing, bounded timeouts and robots authorization. No proxy or bypass.",
+  "results": [
+    {
+      "name": "ArXiv RSS",
+      "url": "https://rss.arxiv.org/rss/cs.AI+cs.LG+cs.CL+cs.CV",
+      "checked_at": "2026-09-13T22:06:22.393288+00:00",
+      "error_type": "PermissionError",
+      "error_status": null,
+      "error": "Article extraction is not permitted by robots policy"
+    },
+    {
+      "name": "Anthropic newsroom",
+      "url": "https://www.anthropic.com/news",
+      "checked_at": "2026-09-13T22:06:22.410261+00:00",
+      "status": 200,
+      "final_url": "https://www.anthropic.com/news",
+      "content_type": "text/html; charset=utf-8",
+      "feed_version": "",
+      "feed_entries": 0,
+      "bozo": false,
+      "advertised_feeds": []
+    },
+    {
+      "name": "Meta AI blog",
+      "url": "https://ai.meta.com/blog/",
+      "checked_at": "2026-09-13T22:06:22.422994+00:00",
+      "status": 200,
+      "final_url": "https://ai.meta.com/blog/",
+      "content_type": "text/html; charset=\"utf-8\"",
+      "feed_version": "",
+      "feed_entries": 0,
+      "bozo": 1,
+      "advertised_feeds": []
+    },
+    {
+      "name": "Mistral news",
+      "url": "https://mistral.ai/news",
+      "checked_at": "2026-09-13T22:06:22.435397+00:00",
+      "status": 200,
+      "final_url": "https://mistral.ai/news/",
+      "content_type": "text/html; charset=UTF-8",
+      "feed_version": "",
+      "feed_entries": 0,
+      "bozo": 1,
+      "advertised_feeds": [
+        {
+          "rel": "alternate",
+          "type": "application/rss+xml",
+          "title": "Mistral AI",
+          "href": "https://mistral.ai/news/rss"
+        }
+      ]
+    },
+    {
+      "name": "Cohere blog",
+      "url": "https://cohere.com/blog",
+      "checked_at": "2026-09-13T22:06:22.447229+00:00",
+      "status": 200,
+      "final_url": "https://cohere.com/blog",
+      "content_type": "text/html; charset=utf-8",
+      "feed_version": "",
+      "feed_entries": 0,
+      "bozo": false,
+      "advertised_feeds": []
+    },
+    {
+      "name": "ArXiv RSS robots",
+      "url": "https://rss.arxiv.org/robots.txt",
+      "checked_at": "2026-09-13T22:07:13.794958+00:00",
+      "error_type": "HTTPStatusError",
+      "error_status": 404,
+      "error": "Client error '404 Not Found' for url 'https://rss.arxiv.org/robots.txt'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Mistral advertised RSS",
+      "url": "https://mistral.ai/news/rss",
+      "checked_at": "2026-09-13T22:07:13.810879+00:00",
+      "status": 200,
+      "final_url": "https://mistral.ai/news/rss",
+      "feed_version": "rss20",
+      "feed_entries": 86,
+      "bozo": false,
+      "sample_title": "Cloudera and Mistral Partner to Bring Specialized, Sovereign Intelligence to Enterprise Data",
+      "sample_url": "https://mistral.ai/news/mistral-x-cloudera/"
+    },
+    {
+      "name": "Anthropic candidate RSS",
+      "url": "https://www.anthropic.com/news/rss.xml",
+      "checked_at": "2026-09-13T22:07:13.824063+00:00",
+      "error_type": "HTTPStatusError",
+      "error_status": 404,
+      "error": "Client error '404 Not Found' for url 'https://www.anthropic.com/news/rss.xml'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Meta AI candidate RSS",
+      "url": "https://ai.meta.com/blog/rss/",
+      "checked_at": "2026-09-13T22:07:13.836955+00:00",
+      "error_type": "HTTPStatusError",
+      "error_status": 404,
+      "error": "Client error '404 Not Found' for url 'https://ai.meta.com/blog/rss/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Cohere candidate RSS",
+      "url": "https://cohere.com/blog/rss.xml",
+      "checked_at": "2026-09-13T22:07:13.848860+00:00",
+      "status": 200,
+      "final_url": "https://cohere.com/blog",
+      "feed_version": "",
+      "feed_entries": 0,
+      "bozo": false
+    },
+    {
+      "name": "ArXiv RSS with explicit absent-robots handling",
+      "url": "https://rss.arxiv.org/rss/cs.AI+cs.LG+cs.CL+cs.CV",
+      "checked_at": "2026-09-13T22:08:00.621318+00:00",
+      "robots_status": 404,
+      "status": 200,
+      "feed_version": "rss20",
+      "feed_entries": 0,
+      "bozo": false,
+      "feed_metadata": {
+        "title": "cs.AI, cs.LG, cs.CL, cs.CV updates on arXiv.org",
+        "title_detail": {
+          "type": "text/plain",
+          "language": null,
+          "base": "",
+          "value": "cs.AI, cs.LG, cs.CL, cs.CV updates on arXiv.org"
+        },
+        "links": [
+          {
+            "rel": "alternate",
+            "type": "text/html",
+            "href": "http://rss.arxiv.org/rss/cs.AI+cs.LG+cs.CL+cs.CV"
+          },
+          {
+            "href": "http://rss.arxiv.org/rss/cs.AI+cs.LG+cs.CL+cs.CV",
+            "rel": "self",
+            "type": "application/rss+xml"
+          }
+        ],
+        "link": "http://rss.arxiv.org/rss/cs.AI+cs.LG+cs.CL+cs.CV",
+        "subtitle": "cs.AI, cs.LG, cs.CL, cs.CV updates on the arXiv.org e-print archive.",
+        "subtitle_detail": {
+          "type": "text/html",
+          "language": null,
+          "base": "",
+          "value": "cs.AI, cs.LG, cs.CL, cs.CV updates on the arXiv.org e-print archive."
+        },
+        "docs": "http://www.rssboard.org/rss-specification",
+        "language": "en-us",
+        "updated": "Sun, 13 Sep 2026 04:00:17 +0000",
+        "updated_parsed": [
+          2026,
+          9,
+          13,
+          4,
+          0,
+          17,
+          6,
+          256,
+          0
+        ],
+        "authors": [
+          {
+            "email": "rss-help@arxiv.org"
+          }
+        ],
+        "author": "rss-help@arxiv.org",
+        "author_detail": {
+          "email": "rss-help@arxiv.org"
+        },
+        "published": "Sun, 13 Sep 2026 00:00:00 -0400",
+        "published_parsed": [
+          2026,
+          9,
+          13,
+          4,
+          0,
+          0,
+          6,
+          256,
+          0
+        ],
+        "day": "Sunday",
+        "skipdays": ""
+      }
+    }
+  ]
+}

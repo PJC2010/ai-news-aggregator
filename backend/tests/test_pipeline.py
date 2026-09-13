@@ -245,7 +245,7 @@ async def test_rejected_item_does_not_commit_etag(factory, settings, embedder):
 
 def test_seed_is_idempotent(factory):
     with factory() as session:
-        assert seed_sources(session) == 12
+        assert seed_sources(session) == 13
         source = session.scalar(select(Source).where(Source.name == "OpenAI"))
         source.is_active = False
         session.commit()
@@ -253,7 +253,7 @@ def test_seed_is_idempotent(factory):
         assert not source.is_active
         assert (
             session.scalar(select(func.count()).select_from(Source).where(Source.type == "rss"))
-            == 10
+            == 11
         )
 
 
@@ -308,3 +308,149 @@ def test_primary_syndication_upgrade_retains_permanent_url_alias(factory, settin
 def test_invalid_vectors_rejected(vector):
     with pytest.raises(ValueError):
         validate_vector(vector)
+
+
+@pytest.mark.parametrize("body_kind", ["feed_summary", "feed_full", "abstract", "extracted"])
+@pytest.mark.parametrize("replacement", ["Corrected text", "Same size sentence now"])
+async def test_publisher_corrections_invalidate_analysis(
+    factory, settings, embedder, body_kind, replacement
+):
+    with factory() as session:
+        session.add(make_source("publisher"))
+        session.commit()
+    title, body = "Original title", "Four word original sentence"
+
+    async def fetcher(*_):
+        return FetchResult(
+            [Candidate("https://publisher.example/story", title, body, body_kind=body_kind)]
+        )
+
+    await run_pipeline(factory, settings, SimpleNamespace(), embedder, fetcher)
+    with factory() as session:
+        cluster = session.scalar(select(Cluster))
+        cluster.summary = "Old summary"
+        cluster.analysis = {"stale": True}
+        cluster.analysis_status = "ready"
+        cluster.analysis_input_hash = "old"
+        session.commit()
+    title, body = "Corrected title", replacement
+    result = await run_pipeline(factory, settings, SimpleNamespace(), embedder, fetcher)
+    assert result["counts"]["created"] == 0
+    assert result["counts"]["embedded"] == 1
+    with factory() as session:
+        article, cluster = session.scalar(select(Article)), session.scalar(select(Cluster))
+        assert (article.title, article.body, article.body_kind) == (title, body, body_kind)
+        assert cluster.topic == title
+        assert cluster.analysis_status == "pending"
+        assert cluster.summary is cluster.analysis is cluster.analysis_input_hash is None
+        assert session.scalar(select(func.count()).select_from(Cluster)) == 1
+
+
+@pytest.mark.parametrize("existing_kind", ["extracted", "feed_full", "unknown"])
+def test_feed_excerpt_preserves_complete_or_legacy_body(factory, settings, existing_kind):
+    with factory() as session:
+        source = make_source("publisher")
+        session.add(source)
+        session.flush()
+        original = (
+            "The complete original article contains detailed information and supporting context."
+        )
+        store_candidate(
+            session,
+            source,
+            Candidate(
+                "https://publisher.example/story", "Title", original, body_kind=existing_kind
+            ),
+            settings,
+        )
+        store_candidate(
+            session,
+            source,
+            Candidate(
+                "https://publisher.example/story",
+                "Title",
+                "Short excerpt",
+                body_kind="feed_summary",
+            ),
+            settings,
+        )
+        article = session.scalar(select(Article))
+        assert article.body == original
+        assert article.body_kind == existing_kind
+
+
+async def test_fallback_coverage_diagnostics_survive_partial_run(factory, settings, embedder):
+    with factory() as session:
+        source = make_source("arxiv")
+        source.config = {"etag": "old"}
+        session.add(source)
+        session.commit()
+
+    async def fetcher(*_):
+        return FetchResult(
+            [],
+            state={
+                "fetch_mode": "rss_fallback",
+                "scope_note": "Latest announcements only",
+                "etag": "new",
+            },
+            warnings=["API unavailable; RSS is an incomplete lookback"],
+        )
+
+    result = await run_pipeline(factory, settings, SimpleNamespace(), embedder, fetcher)
+    assert result["status"] == "partial"
+    with factory() as session:
+        source = session.scalar(select(Source))
+        assert source.config == {
+            "etag": "old",
+            "fetch_mode": "rss_fallback",
+            "scope_note": "Latest announcements only",
+        }
+        assert source.last_error
+
+
+@pytest.mark.parametrize("weaker_first", [False, True])
+def test_representative_body_always_belongs_to_its_publisher(factory, settings, weaker_first):
+    with factory() as session:
+        official, community = make_source("official", 10), make_source("community", 4)
+        session.add_all([official, community])
+        session.flush()
+        official_body = "The official publisher announces a corrected specification."
+        community_body = (
+            "Community speculation with much more text and unsupported capabilities " * 10
+        )
+        rows = [(official, official_body), (community, community_body)]
+        if weaker_first:
+            rows.reverse()
+        for source, body in rows:
+            store_candidate(
+                session,
+                source,
+                Candidate("https://official.example/story", "Product announcement", body),
+                settings,
+            )
+        article = session.scalar(select(Article))
+        assert article.source_id == official.id
+        assert article.body == official_body
+        assert session.scalar(select(func.count()).select_from(Observation)) == 2
+
+
+def test_identical_publisher_text_identifies_legacy_body_for_later_corrections(factory, settings):
+    with factory() as session:
+        source = make_source("publisher")
+        session.add(source)
+        session.flush()
+        for body, kind in [
+            ("The original full feed summary", "unknown"),
+            ("The original full feed summary", "feed_summary"),
+            ("Corrected shorter summary", "feed_summary"),
+        ]:
+            store_candidate(
+                session,
+                source,
+                Candidate("https://publisher.example/story", "Title", body, body_kind=kind),
+                settings,
+            )
+        article = session.scalar(select(Article))
+        assert article.body == "Corrected shorter summary"
+        assert article.body_kind == "feed_summary"

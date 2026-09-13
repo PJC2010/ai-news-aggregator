@@ -86,6 +86,7 @@ def store_candidate(session, source, candidate, settings):
             url_hash=url_hash(canonical),
             title=candidate.title,
             body=candidate.body,
+            body_kind=candidate.body_kind,
             author=candidate.author,
             published_at=candidate.published_at,
             content_hash=fingerprint,
@@ -97,14 +98,35 @@ def store_candidate(session, source, candidate, settings):
         # A richer publisher feed can upgrade a URL first found as an HN headline.
         previous_source = session.get(Source, article.source_id)
         promote = source.authority_score > previous_source.authority_score
-        if (canonical == article.canonical_url or promote) and (
-            len(candidate.body.split()) > len(article.body.split())
-        ):
+        same_publisher = source.id == article.source_id and canonical == article.canonical_url
+        if same_publisher and article.body_kind == "unknown" and candidate.body == article.body:
+            article.body_kind = candidate.body_kind
+        corrected_body = (
+            same_publisher
+            and bool(candidate.body.strip())
+            and (
+                candidate.body_kind == article.body_kind
+                or candidate.body_kind in {"extracted", "feed_full", "abstract"}
+            )
+        )
+        richer_body = same_publisher and (len(candidate.body.split()) > len(article.body.split()))
+        if candidate.body != article.body and (corrected_body or richer_body):
             article.body, article.content_hash = candidate.body, fingerprint
+            article.body_kind = candidate.body_kind
+            article.embedding = None
+            article.embedding_model = None
+            changed = True
+        if same_publisher and candidate.title != article.title:
+            article.title = candidate.title
             article.embedding = None
             article.embedding_model = None
             changed = True
         if promote:
+            # The representative publisher must own the text attributed to it.
+            # Keeping a longer prior source's text would mislabel the evidence.
+            article.body = candidate.body
+            article.body_kind = candidate.body_kind
+            article.content_hash = fingerprint
             article.url = candidate.url
             article.canonical_url = canonical
             article.url_hash = url_hash(canonical)
@@ -196,6 +218,7 @@ async def run_pipeline(factory, settings: Settings, client, embedder, fetcher=fe
                                 extracted = await parser.extract(candidate.url)
                                 if len(extracted.split()) > len(candidate.body.split()):
                                     candidate.body = extracted
+                                    candidate.body_kind = "extracted"
                                 else:
                                     counts["extraction_fallbacks"] += 1
                             except Exception:
@@ -211,6 +234,16 @@ async def run_pipeline(factory, settings: Settings, client, embedder, fetcher=fe
                     source.last_fetched_at = utcnow()
                     source.last_error = None
                 else:
+                    # Coverage diagnostics remain visible even when incomplete coverage
+                    # prevents advancing validators or claiming a fully successful fetch.
+                    source.config = {
+                        **source.config,
+                        **{
+                            key: fetched.state[key]
+                            for key in ("fetch_mode", "scope_note")
+                            if key in fetched.state
+                        },
+                    }
                     source.last_error = "; ".join(source_errors[:10])
                 session.commit()
             except Exception as exc:

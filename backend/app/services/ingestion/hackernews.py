@@ -35,6 +35,7 @@ async def fetch_hackernews(client, source, limit: int) -> FetchResult:
             url=item.get("url") or discussion,
             title=title,
             body=body,
+            body_kind="discussion",
             author=item.get("by"),
             published_at=datetime.fromtimestamp(item["time"], UTC),
             external_id=str(item["id"]),

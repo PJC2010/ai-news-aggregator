@@ -1,27 +1,29 @@
 # AI News Aggregator
 
-The first implementation milestone from `SPEC.md`: fetch AI news, retain source evidence, deduplicate articles, and group related coverage into persistent events.
+The shared news pipeline from `SPEC.md`: fetch AI news, retain source evidence, deduplicate articles, group related coverage, and generate reusable event summaries and analysis.
 
-This is a backend pipeline foundation. The two-pass analysis, customer accounts, Next.js dashboard, email delivery, and Stripe billing are the next milestones. There is no publicly deployed service yet.
+This is a working backend preview. Customer accounts, the Next.js dashboard, email delivery, and Stripe billing are future milestones. There is no publicly deployed service yet.
 
 ## Implemented
 
 | Component | Behavior |
 | --- | --- |
-| ArXiv | Atom API ingestion for cs.AI, cs.LG, cs.CL, cs.CV; paged, bounded lookback; requests spaced at least 3.1 seconds apart |
+| ArXiv | Bounded Atom API ingestion for cs.AI, cs.LG, cs.CL, cs.CV; official RSS fallback for temporary failures, explicitly marked as limited coverage |
 | Hacker News | Firebase top stories; title/body/link AI filtering; retains story ID, discussion URL, points, and comments |
-| Company RSS | Ten configured feeds; RSS/Atom parsing; ETag and Last-Modified support |
+| Company RSS | Eleven configured feeds, including Mistral; RSS/Atom parsing; ETag and Last-Modified support |
 | Article parsing | Feed/API text first; optional trafilatura extraction with per-origin robots rules checked again on redirects |
 | Deduplication | Canonical URL SHA-256 plus conservative 64-bit SimHash for long bodies; durable aliases and source observations |
 | Embeddings | CPU MiniLM, 384 dimensions; pinned model revision; batch processing and resume after failure |
 | Event clustering | Cosine threshold 0.85 within a 72-hour event window; authority-first primary article selection |
+| Shared intelligence | DeepSeek Flash summary followed by V4 Pro structured analysis; schema and evidence-link validation, versioned cache, usage and estimated costs |
+| Ranking | Explainable recency, technical significance, independent publisher/category diversity, and deduplicated Hacker News engagement |
 | Persistence | SQLAlchemy, Alembic, PostgreSQL/pgvector, timezone-aware timestamps, membership constraints, run status |
 | Scheduling | Celery and Redis; 30-minute default interval; PostgreSQL advisory lock prevents overlapping writers |
 | Inspection | Protected FastAPI endpoints for clusters, source health, and recent runs; public liveness/readiness |
 
 ## Start with Docker
 
-Requires Docker Engine/Desktop with Compose v2. The checked-in dependency locks target Python 3.12 and Linux CPU execution. The first image build installs PyTorch; the first model warmup downloads MiniLM. No paid API keys are needed for this milestone.
+Requires Docker Engine/Desktop with Compose v2+. The checked-in dependency locks target Python 3.12 and Linux CPU execution. The first image build installs PyTorch; the first model warmup downloads MiniLM. Ingestion and embeddings run without paid API keys; generated analysis requires a DeepSeek API key and account balance.
 
 From this project's root:
 
@@ -49,7 +51,7 @@ curl -H 'X-Operator-Key: YOUR_OPERATOR_API_KEY' http://localhost:8000/clusters
 curl -H 'X-Operator-Key: YOUR_OPERATOR_API_KEY' http://localhost:8000/internal/runs
 ```
 
-Once the first run succeeds, start regular ingestion:
+After reviewing source health and coverage limitations, regular ingestion can be started with:
 
 ```bash
 docker compose up -d worker beat
@@ -59,6 +61,23 @@ docker compose logs --tail=50 worker
 Compose binds API, PostgreSQL, and Redis to localhost. Its database credentials are local-development defaults. Named volumes retain the database, model cache, and scheduler state. `docker compose down` stops the stack without deleting these volumes.
 
 If port 5432 is occupied, set `POSTGRES_PORT=55432` in `.env` and change the local `DATABASE_URL` port to 55432 as well. Services inside Compose still connect to PostgreSQL on 5432.
+
+## Generate shared analysis
+
+Create a key in [DeepSeek's API keys dashboard](https://platform.deepseek.com/api_keys) and place it in the ignored root `.env` as `DEEPSEEK_API_KEY`. API billing is managed in [the DeepSeek platform](https://platform.deepseek.com/). Recreate running services after changing `.env` so they receive the new settings:
+
+```bash
+docker compose up -d --force-recreate api
+docker compose exec -T api ai-news analyze --limit 1
+```
+
+The default summary model is `deepseek-flash`; structured analysis uses `deepseek-v4-pro`. Each run processes up to `ANALYSIS_CLUSTER_LIMIT=10` uncached clusters, with `ANALYSIS_BUDGET_USD=0.25` as a conservative pre-request spending limit. To resume or verify a specific event, use `ai-news analyze --cluster-id UUID`. Cached stages require no new model request; completed events with unchanged evidence, models, prompts, and output limits are skipped. At least 40 words of source text are required. Headline-only events stay explicitly marked as insufficient evidence.
+
+`GET /internal/analysis`, protected with the operator key, shows configuration status, recent runs, model/prompt versions, tokens, and estimated costs. It never returns credentials. Costs use the recorded [DeepSeek peak rates](https://api-docs.deepseek.com/quick_start/pricing/) and token usage; they are estimates, not invoices. Unknown-usage failures retain a conservative reservation. Requests are not automatically retried after a provider error. Changing prices requires updating the versioned rate table.
+
+Automatic analysis is off by default. Setting `ANALYSIS_ENABLED=true` and recreating `worker` attaches analysis to each scheduled ingestion. The budget applies **per run**, not per day or month. Manual analysis works with this setting off.
+
+`GET /clusters` and `/clusters/today` default to ranked order; use `?sort=latest` for chronological order. Responses expose rank components and analysis status, alongside summaries and structured analysis when available. Missing significance receives a marked neutral value. Ranking currently loads the filtered candidate set in memory, suitable for this local preview; large-scale serving needs a precomputed or database-backed ranking index.
 
 ## Develop without containerizing Python
 
@@ -116,21 +135,21 @@ See [validation results](docs/VALIDATION.md) for checks actually performed in th
 
 ## Data and processing decisions
 
-- **Shared event intelligence:** source articles and clusters are global. No per-user analysis or fabricated analysis is generated; `summary` and `analysis` remain null until Week 3.
-- **Provenance survives deduplication:** one article can have several source observations. `cluster_size` counts distinct article records; it does not count publishers. Later diversity scoring must use observations and source categories, and avoid treating syndication as independent corroboration.
+- **Shared event intelligence:** source articles, clusters, summaries, and analysis are global. Personalization belongs at delivery time. Evidence is bounded to the primary article plus three supporting articles. Source text is treated as untrusted data, and returned code/paper links must appear in the supplied evidence allowlist.
+- **Provenance survives deduplication:** one article can have several source observations. `cluster_size` counts distinct article records. Ranking derives diversity from observations and categories, caps it by distinct articles, and avoids rewarding duplicate HN story IDs.
 - **Safe replays:** URL aliases and `(source_id, external_id)` observations prevent duplicate ingestion; engagement signals are updated in place. RSS validators only advance after all returned items are handled successfully.
 - **Recoverable work:** articles commit before embeddings. Missing embeddings and cluster memberships resume on the next run. A source failure does not discard another source's successful fetch.
 - **Model consistency:** the database stores a 384-dimensional vector and model/revision identity. Changing to the spec's 1,536-dimensional OpenAI alternative requires a migration and full re-embedding/reclustering.
 - **Representative selection:** source authority dominates body completeness. Authority scores are editable initial judgments, not measured quality. A higher-authority original can replace a syndicated copy while preserving its old URL alias.
+- **Publisher corrections:** updates from the representative publisher can replace equal-length or shorter text of the same kind, and update its title. Full feed content, extracted articles, and abstracts can correct prior text; a shorter summary cannot overwrite a known full article or legacy body. Changes invalidate embeddings and cluster intelligence for regeneration.
 - **News snapshots:** each run reads up to `SOURCE_LIMIT` records per source, with a rolling `INITIAL_LOOKBACK_DAYS` filter. This does not guarantee exhaustive capture during high-volume periods or recover every item missed during a long outage.
 - **Conservative clustering:** short texts bypass SimHash; clustering compares an article with recent primary articles. The initial threshold favors precision. Week 3 should evaluate labeled events before tuning or upgrading to HDBSCAN.
 - **Fetching boundaries:** requests have time/size limits, retries, pacing, public-address checks, and validated redirects. The fetcher uses direct connections. DNS is checked before each URL fetch; production egress controls should also prevent DNS rebinding. Failed or unreadable robots policies leave feed/API text intact.
 
 ## Next milestones
 
-1. Resolve ArXiv timeouts/rate limiting and remaining source coverage gaps, then complete an all-source successful run. The Docker/PostgreSQL gates and one scheduled live run now pass their supported checks; the live run retained 34 articles but reported `partial` for ArXiv. Review real events and expand beyond the bounded smoke test. See [the handoff](docs/HANDOFF.md).
-2. **Week 3:** implement cluster-input hashing and two-pass summary/structured analysis, record model/prompt versions and costs, add ranking, evaluate HDBSCAN against labeled events. Personalization remains outside shared analysis.
-3. **Week 4:** Clerk/Supabase user identity, topic preferences and tier limits, Next.js dashboard, local-time daily digests, Resend/Postmark, Stripe subscriptions and verified webhooks.
+1. Review live summaries and ranking against a labeled event sample; evaluate clustering changes before adopting HDBSCAN. Improve ArXiv lookback recovery and add verified Anthropic, Meta AI, and Cohere adapters. See [the handoff](docs/HANDOFF.md).
+2. **Week 4:** Clerk/Supabase user identity, topic preferences and tier limits, Next.js dashboard, local-time daily digests, Resend/Postmark, Stripe subscriptions and verified webhooks.
 
 Post-MVP features in the specification, including developer API access, Reddit, GitHub Trending, bots, and team plans, remain deferred. The spec lists developer API endpoints elsewhere; the explicit Post-MVP exclusion takes precedence here.
 

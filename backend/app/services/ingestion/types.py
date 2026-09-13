@@ -11,6 +11,7 @@ class Candidate:
     published_at: datetime | None = None
     external_id: str = ""
     metadata: dict = field(default_factory=dict)
+    body_kind: str = "feed_summary"
 
 
 @dataclass

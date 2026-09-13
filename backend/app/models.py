@@ -68,6 +68,7 @@ class Article(Base):
     url_hash: Mapped[str] = mapped_column(String(64), unique=True)
     title: Mapped[str] = mapped_column(Text)
     body: Mapped[str] = mapped_column(Text, default="")
+    body_kind: Mapped[str] = mapped_column(String(30), default="unknown")
     author: Mapped[str | None] = mapped_column(Text)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -104,6 +105,9 @@ class Cluster(Base):
     analysis_input_hash: Mapped[str | None] = mapped_column(String(64))
     significance_score: Mapped[int | None] = mapped_column(Integer)
     event_type: Mapped[str | None] = mapped_column(String(50))
+    analysis_status: Mapped[str] = mapped_column(String(30), default="pending")
+    analysis_error: Mapped[str | None] = mapped_column(Text)
+    analyzed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     latest_published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
@@ -135,3 +139,41 @@ class PipelineRun(Base):
     status: Mapped[str] = mapped_column(String(30), default="running")
     counts: Mapped[dict] = mapped_column(Json, default=dict)
     errors: Mapped[list] = mapped_column(Json, default=list)
+
+
+class AnalysisRun(Base):
+    __tablename__ = "analysis_runs"
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(30), default="running")
+    counts: Mapped[dict] = mapped_column(Json, default=dict)
+    errors: Mapped[list] = mapped_column(Json, default=list)
+    estimated_cost_usd: Mapped[float] = mapped_column(Float, default=0)
+
+
+class AnalysisCall(Base):
+    """Durable billable-attempt ledger and successful stage-output cache."""
+
+    __tablename__ = "analysis_calls"
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("analysis_runs.id"), index=True)
+    cluster_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clusters.id"), index=True)
+    cache_key: Mapped[str] = mapped_column(String(64), index=True)
+    stage: Mapped[str] = mapped_column(String(20))
+    provider: Mapped[str] = mapped_column(String(30), default="deepseek")
+    model: Mapped[str] = mapped_column(String(100))
+    returned_model: Mapped[str | None] = mapped_column(String(100))
+    prompt_version: Mapped[str] = mapped_column(String(100))
+    status: Mapped[str] = mapped_column(String(30), default="started")
+    output: Mapped[dict | None] = mapped_column(Json)
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    cached_input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    estimated_cost_usd: Mapped[float] = mapped_column(Float)
+    cost_is_upper_bound: Mapped[bool] = mapped_column(Boolean, default=True)
+    pricing_version: Mapped[str] = mapped_column(String(100))
+    request_id: Mapped[str | None] = mapped_column(String(255))
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

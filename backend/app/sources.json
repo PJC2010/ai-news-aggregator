@@ -10,5 +10,6 @@
   {"name":"Databricks","url":"https://www.databricks.com/feed","type":"rss","category":"company","authority_score":8,"config":{"ai_filter":true}},
   {"name":"GitHub AI & ML","url":"https://github.blog/ai-and-ml/feed/","type":"rss","category":"company","authority_score":8,"config":{}},
   {"name":"Cloudflare AI","url":"https://blog.cloudflare.com/tag/ai/rss/","type":"rss","category":"company","authority_score":8,"config":{}},
-  {"name":"Google AI","url":"https://blog.google/technology/ai/rss/","type":"rss","category":"company","authority_score":9,"config":{}}
+  {"name":"Google AI","url":"https://blog.google/technology/ai/rss/","type":"rss","category":"company","authority_score":9,"config":{}},
+  {"name":"Mistral AI","url":"https://mistral.ai/news/rss","type":"rss","category":"company","authority_score":9,"config":{}}
 ]
