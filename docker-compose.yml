@@ -16,6 +16,21 @@ x-backend: &backend
       condition: service_healthy
 
 services:
+  dashboard:
+    profiles: ["dashboard"]
+    image: ai-news-aggregator-dashboard:local
+    build: ./frontend
+    ports: ["127.0.0.1:${DASHBOARD_PORT:-3000}:3000"]
+    environment:
+      BACKEND_URL: http://api:8000
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:-}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      DASHBOARD_DEMO_MODE: ${DASHBOARD_DEMO_MODE:-false}
+    depends_on:
+      api:
+        condition: service_healthy
+
   postgres:
     image: pgvector/pgvector:pg16
     environment:

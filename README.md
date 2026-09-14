@@ -2,7 +2,20 @@
 
 The shared news pipeline from `SPEC.md`: fetch AI news, retain source evidence, deduplicate articles, group related coverage, and generate reusable event summaries and analysis.
 
-This is a working backend preview. Customer accounts, the Next.js dashboard, email delivery, and Stripe billing are future milestones. There is no publicly deployed service yet.
+This is a working dashboard and backend preview. The Next.js reading workspace includes Supabase sign-in, ranked events, full analysis, and saved topic preferences. Live sign-in requires configuring a Supabase project. Digest email delivery and Stripe billing remain future milestones. There is no publicly deployed service yet.
+
+## Try the dashboard
+
+With Node.js 22.18+:
+
+```bash
+cd frontend
+npm ci
+cp .env.example .env.local
+npm run dev
+```
+
+Open http://localhost:3000 for the clearly labeled demo workspace. It uses illustrative stories and requires no credentials. See [dashboard setup](docs/DASHBOARD.md) to connect Supabase Auth and the real pipeline, use Docker, or run the browser integration tests.
 
 ## Implemented
 
@@ -20,6 +33,8 @@ This is a working backend preview. Customer accounts, the Next.js dashboard, ema
 | Persistence | SQLAlchemy, Alembic, PostgreSQL/pgvector, timezone-aware timestamps, membership constraints, run status |
 | Scheduling | Celery and Redis; 30-minute default interval; PostgreSQL advisory lock prevents overlapping writers |
 | Inspection | Protected FastAPI endpoints for clusters, source health, and recent runs; public liveness/readiness |
+| Dashboard | Responsive Next.js feed, search, filters, pagination, event analysis, and source coverage |
+| Identity and preferences | Supabase email sign-in; PostgreSQL-backed profiles and isolated topic selections; three-topic free limit |
 
 ## Start with Docker
 
@@ -149,7 +164,7 @@ See [validation results](docs/VALIDATION.md) for checks actually performed in th
 ## Next milestones
 
 1. Review live summaries and ranking against a labeled event sample; evaluate clustering changes before adopting HDBSCAN. Improve ArXiv lookback recovery and add verified Anthropic, Meta AI, and Cohere adapters. See [the handoff](docs/HANDOFF.md).
-2. **Week 4:** Clerk/Supabase user identity, topic preferences and tier limits, Next.js dashboard, local-time daily digests, Resend/Postmark, Stripe subscriptions and verified webhooks.
+2. **Week 4:** Configure and verify live Supabase email sign-in, then add local-time daily digests, Resend/Postmark, Stripe subscriptions and verified webhooks. The dashboard, Supabase integration, and saved topic preferences are implemented; see [dashboard setup](docs/DASHBOARD.md).
 
 Post-MVP features in the specification, including developer API access, Reddit, GitHub Trending, bots, and team plans, remain deferred. The spec lists developer API endpoints elsewhere; the explicit Post-MVP exclusion takes precedence here.
 

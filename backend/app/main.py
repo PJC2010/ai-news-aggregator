@@ -4,9 +4,10 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
-from sqlalchemy import func, select, text
+from sqlalchemy import false, func, or_, select, text
 from sqlalchemy.orm import Session
 
+from app.auth import Identity, require_user
 from app.config import get_settings
 from app.database import get_session
 from app.models import (
@@ -18,6 +19,15 @@ from app.models import (
     Observation,
     PipelineRun,
     Source,
+    UserTopic,
+)
+from app.preferences import (
+    TOPICS,
+    TopicsUpdate,
+    ensure_profile,
+    profile_payload,
+    save_topics,
+    topic_match,
 )
 from app.services.processing.ranking import (
     RankingSignals,
@@ -26,7 +36,16 @@ from app.services.processing.ranking import (
     ranking_key,
 )
 
-app = FastAPI(title="AI News Aggregator — Intelligence Preview", version="0.2.0")
+app = FastAPI(title="AI News Aggregator", version="0.3.0")
+
+
+@app.middleware("http")
+async def private_responses(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith(("/me", "/feed", "/clusters", "/internal")):
+        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["Vary"] = "Authorization, X-Operator-Key"
+    return response
 
 
 def require_operator(x_operator_key: str | None = Header(default=None)):
@@ -48,9 +67,102 @@ def ready(session: Session = Depends(get_session)):
         session.execute(text("SELECT 1 FROM sources LIMIT 1"))
         session.execute(text("SELECT '[1,0]'::vector"))
         session.execute(text("SELECT 1 FROM analysis_calls LIMIT 1"))
+        session.execute(text("SELECT 1 FROM users LIMIT 1"))
+        session.execute(text("SELECT 1 FROM user_topics LIMIT 1"))
     except Exception as exc:
         raise HTTPException(503, "Database or vector extension is not ready") from exc
     return {"status": "ready"}
+
+
+@app.get("/me")
+def me(identity: Identity = Depends(require_user), session: Session = Depends(get_session)):
+    return profile_payload(session, ensure_profile(session, identity))
+
+
+@app.put("/me/topics")
+def update_topics(
+    update: TopicsUpdate,
+    identity: Identity = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    return save_topics(session, identity, update)
+
+
+def customer_payload(payload):
+    # Provider errors and raw observation metadata belong to operator inspection.
+    payload.pop("analysis_error", None)
+    for source in payload.get("coverage", []):
+        source.pop("signals", None)
+    return payload
+
+
+@app.get("/feed")
+def customer_feed(
+    identity: Identity = Depends(require_user),
+    session: Session = Depends(get_session),
+    limit: int = Query(12, ge=1, le=100),
+    offset: int = Query(0, ge=0, le=100000),
+    sort: Literal["ranked", "latest"] = Query("ranked"),
+    q: str = Query("", max_length=200),
+    topic: str | None = Query(None, max_length=60),
+    following: bool = False,
+    window: Literal["week", "today", "all"] = Query("week"),
+    event_type: Literal[
+        "model_release",
+        "paper",
+        "funding",
+        "regulation",
+        "research_breakthrough",
+        "tool_release",
+        "other",
+    ]
+    | None = Query(None),
+):
+    now = datetime.now(UTC)
+    statement = select(Cluster).join(Article, Article.id == Cluster.primary_article_id)
+    if window == "week":
+        statement = statement.where(Cluster.latest_published_at >= now - timedelta(days=7))
+    elif window == "today":
+        statement = statement.where(
+            Cluster.latest_published_at >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+        )
+    statement = statement.where(Cluster.latest_published_at <= now)
+    if q.strip():
+        statement = statement.where(
+            or_(
+                *(
+                    column.icontains(q.strip(), autoescape=True)
+                    for column in (Cluster.topic, Cluster.summary, Article.title)
+                )
+            )
+        )
+    if topic:
+        if topic not in TOPICS:
+            raise HTTPException(422, "Unknown topic")
+        statement = statement.where(topic_match(topic))
+    if following:
+        topics = list(
+            session.scalars(select(UserTopic.topic).where(UserTopic.user_id == identity.id))
+        )
+        predicates = [topic_match(value) for value in topics if value in TOPICS]
+        statement = statement.where(or_(*predicates) if predicates else false())
+    if event_type:
+        statement = statement.where(Cluster.event_type == event_type)
+    page = cluster_page(session, statement, limit=limit, offset=offset, sort=sort)
+    page["items"] = [customer_payload(item) for item in page["items"]]
+    return {**page, "as_of": now, "window": window, "timezone": "UTC"}
+
+
+@app.get("/feed/{cluster_id}")
+def customer_detail(
+    cluster_id: UUID,
+    identity: Identity = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    cluster = session.get(Cluster, cluster_id)
+    if not cluster:
+        raise HTTPException(404, "Event not found")
+    return customer_payload(cluster_payload(session, cluster, detail=True))
 
 
 @app.get("/internal/analysis", dependencies=[Depends(require_operator)])

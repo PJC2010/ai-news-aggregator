@@ -1,8 +1,20 @@
-# Project handoff — 2026-09-13
+# Project handoff — updated 2026-09-14
 
 Repository: https://github.com/PJC2010/ai-news-aggregator
 
 ## Current milestone
+
+The next delivery slice adds the Next.js dashboard, Supabase Auth integration,
+per-user PostgreSQL profiles and topics, and authenticated customer feed endpoints.
+See [DASHBOARD.md](DASHBOARD.md) for demo and live setup. Migration
+`0003_dashboard_users` is required for the customer endpoints. Browsing and changing
+topics do not run paid analysis. The three-topic free limit is enforced by the
+backend; no client input can set a subscription tier. This environment verifies
+the complete browser-to-FastAPI flow against a test identity service. A real
+Supabase project and email sign-in still need to be configured and checked.
+
+The local Colima notes below record the earlier backend environment; they do not
+describe a deployment performed by this dashboard change.
 
 The downloaded Week 1–2 backend is connected to its private GitHub repository. Ingestion, source observations, deduplication, MiniLM embeddings, and event clustering are implemented. The shared-intelligence milestone now adds:
 
@@ -63,7 +75,9 @@ The database contains 39 articles, embeddings, cluster memberships, and observat
 
 1. Review summaries, classifications, ranking, and clustering against a labeled event sample. No HDBSCAN or clustering threshold change is justified yet. Generated analysis needs editorial quality evaluation beyond a single smoke event.
 2. Recover full ArXiv lookback coverage and add verified Anthropic, Meta AI, and Cohere sources. RSS fallback can legitimately be empty on weekends. See [SOURCES.md](SOURCES.md).
-3. Build the Next.js dashboard, identity provider integration, topic preferences, and delivery-time personalization. Then add local-time digests, email delivery, and subscriptions with verified webhooks.
+3. Configure and verify real Supabase email sign-in using the new dashboard. Then add local-time digests, email delivery, and subscriptions with verified webhooks. Dashboard topic matching is currently a documented keyword filter.
 4. Before production: move secrets into deployment settings, add appropriate access control, evaluate source outage recovery and large-scale performance, and replace in-memory global ranking with an indexed serving strategy.
 
-There is no customer-facing frontend, customer authentication, email delivery, billing integration, or public deployment yet.
+The customer frontend and Supabase authentication integration are implemented.
+Live Auth setup, digest email delivery, billing integration, and public deployment
+remain pending.
