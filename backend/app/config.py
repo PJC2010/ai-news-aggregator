@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://news:news@localhost:5432/news"
     redis_url: str = "redis://localhost:6379/0"
     operator_api_key: str = ""
+    supabase_url: str = ""
+    supabase_publishable_key: str = ""
     user_agent: str = "AINewsAggregator/0.1"
     http_timeout_seconds: float = Field(20, gt=0, le=120)
     http_max_bytes: int = Field(5_000_000, gt=0)

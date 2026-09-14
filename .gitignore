@@ -8,3 +8,10 @@ __pycache__/
 .coverage
 celerybeat-schedule*
 test-results/
+.env.local
+.env.*.local
+node_modules/
+.next/
+playwright-report/
+test-results/
+*.tsbuildinfo

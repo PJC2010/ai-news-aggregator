@@ -1,5 +1,38 @@
 # Implementation validation
 
+## Dashboard checks — 2026-09-14
+
+The dashboard change was checked separately on Linux with Python 3.12 and Node
+24.19.0, starting from upstream commit `956845c`.
+
+- Backend suite: **245 passed, 1 skipped**. The skipped test needs a real
+  `TEST_DATABASE_URL`; Docker/PostgreSQL is not installed in this workspace.
+- Backend Ruff lint and formatting checks passed. Alembic generated the full SQL
+  through `0003_dashboard_users`; real migration execution is covered by the
+  existing PostgreSQL/pgvector GitHub Actions job.
+- Next.js production build and TypeScript checks passed. The locked frontend uses
+  Next.js 16.3.5, React 19.3.0, and Supabase SSR 0.12.7.
+- Three utility tests passed for safe external URLs, query normalization, and
+  filter-preserving pagination.
+- **10 browser scenarios passed** across desktop, mobile, missing Auth setup,
+  invalid callbacks, and the real Next.js-to-FastAPI integration. Integration uses
+  a test-only identity provider and isolated SQLite, not a real Supabase project.
+  It verifies account identity despite a forged embedded session user, preference
+  isolation, saved filters, and honest service-outage states. Demo requests stay
+  disconnected from the backend.
+- Desktop and mobile screenshots were visually checked for clipping and layout.
+  See [desktop preview](screenshots/dashboard-desktop.png) and
+  [mobile preview](screenshots/dashboard-mobile.png). Both contain illustrative
+  demo content.
+
+The standard Playwright browser download timed out in this workspace. Browser
+checks used an npm-packaged Chromium 153 executable; CI installs Playwright's
+standard Chromium. Live Supabase email/PKCE and production SMTP delivery still
+need a configured project. No real accounts, email sends, paid model calls,
+subscriptions, or deployments were created during this milestone.
+
+## Earlier backend validation — 2026-09-13
+
 Checked on 2026-09-13 using Python 3.12.13 on macOS, PostgreSQL 16/pgvector, Redis, and Docker in the Colima `ai-news` profile.
 
 ## Current checks
