@@ -3,12 +3,12 @@ from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from sqlalchemy import false, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from app.auth import Identity, require_user
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.database import get_session
 from app.models import (
     AnalysisCall,
@@ -19,6 +19,7 @@ from app.models import (
     Observation,
     PipelineRun,
     Source,
+    User,
     UserTopic,
 )
 from app.preferences import (
@@ -29,6 +30,9 @@ from app.preferences import (
     save_topics,
     topic_match,
 )
+from app.services.billing.entitlements import Entitlements, Feature, current_entitlements
+from app.services.billing.stripe import StripeClient
+from app.services.billing.webhooks import process_event, verify_event
 from app.services.processing.ranking import (
     RankingSignals,
     load_ranking_signals,
@@ -42,7 +46,7 @@ app = FastAPI(title="AI News Aggregator", version="0.3.0")
 @app.middleware("http")
 async def private_responses(request, call_next):
     response = await call_next(request)
-    if request.url.path.startswith(("/me", "/feed", "/clusters", "/internal")):
+    if request.url.path.startswith(("/me", "/feed", "/billing", "/clusters", "/internal")):
         response.headers["Cache-Control"] = "private, no-store"
         response.headers["Vary"] = "Authorization, X-Operator-Key"
     elif request.url.path.startswith("/public/"):
@@ -71,6 +75,7 @@ def ready(session: Session = Depends(get_session)):
         session.execute(text("SELECT 1 FROM analysis_calls LIMIT 1"))
         session.execute(text("SELECT 1 FROM users LIMIT 1"))
         session.execute(text("SELECT 1 FROM user_topics LIMIT 1"))
+        session.execute(text("SELECT 1 FROM stripe_events LIMIT 1"))
     except Exception as exc:
         raise HTTPException(503, "Database or vector extension is not ready") from exc
     return {"status": "ready"}
@@ -88,6 +93,51 @@ def update_topics(
     session: Session = Depends(get_session),
 ):
     return save_topics(session, identity, update)
+
+
+@app.post("/billing/checkout")
+def billing_checkout(
+    identity: Identity = Depends(require_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+):
+    ensure_profile(session, identity)
+    # Serialize first-checkout customer creation so one application user owns one
+    # Stripe customer even when multiple browser tabs begin checkout together.
+    user = session.scalar(select(User).where(User.id == identity.id).with_for_update())
+    stripe = StripeClient(settings)
+    if not user.stripe_customer_id:
+        customer = stripe.create_customer(user)
+        user.stripe_customer_id = customer["id"]
+        session.commit()
+    checkout = stripe.create_checkout(user)
+    return {"url": checkout["url"]}
+
+
+@app.post("/billing/portal")
+def billing_portal(
+    identity: Identity = Depends(require_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+):
+    user = ensure_profile(session, identity)
+    if not user.stripe_customer_id:
+        raise HTTPException(409, "Start checkout before opening the billing portal")
+    portal = StripeClient(settings).create_portal(user)
+    return {"url": portal["url"]}
+
+
+@app.post("/billing/webhook")
+async def billing_webhook(
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+):
+    # Signature verification must receive the exact bytes Stripe sent, before JSON parsing.
+    payload = await request.body()
+    event = verify_event(payload, request.headers.get("stripe-signature"), settings)
+    process_event(session, event, settings)
+    return {"received": True}
 
 
 def customer_payload(payload):
@@ -192,8 +242,11 @@ def customer_feed(
         "other",
     ]
     | None = Query(None),
+    access: Entitlements = Depends(current_entitlements),
 ):
     now = datetime.now(UTC)
+    if window == "all":
+        access.require(Feature.ARCHIVE)
     statement = select(Cluster).join(Article, Article.id == Cluster.primary_article_id)
     if window == "week":
         statement = statement.where(Cluster.latest_published_at >= now - timedelta(days=7))
@@ -233,11 +286,16 @@ def customer_detail(
     cluster_id: UUID,
     identity: Identity = Depends(require_user),
     session: Session = Depends(get_session),
+    access: Entitlements = Depends(current_entitlements),
 ):
     cluster = session.get(Cluster, cluster_id)
     if not cluster:
         raise HTTPException(404, "Event not found")
-    return customer_payload(cluster_payload(session, cluster, detail=True))
+    payload = customer_payload(cluster_payload(session, cluster, detail=True))
+    if not access.has(Feature.FULL_ANALYSIS):
+        payload["analysis"] = None
+        payload["analysis_locked"] = payload.get("analysis_status") == "complete"
+    return payload
 
 
 @app.get("/internal/analysis", dependencies=[Depends(require_operator)])

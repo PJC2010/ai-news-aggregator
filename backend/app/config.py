@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     operator_api_key: str = ""
     supabase_url: str = ""
     supabase_publishable_key: str = ""
+    stripe_secret_key: SecretStr = SecretStr("")
+    stripe_webhook_secrets: str = ""
+    stripe_pro_price_id: str = ""
+    stripe_success_url: str = "http://localhost:3000/settings/billing?checkout=success"
+    stripe_cancel_url: str = "http://localhost:3000/settings/billing?checkout=canceled"
+    stripe_portal_return_url: str = "http://localhost:3000/settings/billing"
+    stripe_past_due_grace_days: int = Field(3, ge=0, le=30)
     user_agent: str = "AINewsAggregator/0.1"
     http_timeout_seconds: float = Field(20, gt=0, le=120)
     http_max_bytes: int = Field(5_000_000, gt=0)

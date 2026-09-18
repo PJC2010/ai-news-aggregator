@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import Identity
 from app.models import Article, Cluster, User, UserTopic
+from app.services.billing.entitlements import Feature, entitlements_for
 
 TOPICS = {
     "llm": ("Language models", ("language model", "llm", "fine-tun", "inference")),
@@ -53,11 +54,12 @@ def ensure_profile(session: Session, identity: Identity) -> User:
 
 
 def profile_payload(session: Session, user: User):
+    access = entitlements_for(user)
     return {
         "id": user.id,
         "email": user.email,
-        "subscription_tier": user.subscription_tier,
-        "topic_limit": 3 if user.subscription_tier == "free" else len(TOPICS),
+        "subscription_tier": access.tier,
+        "topic_limit": len(TOPICS) if access.has(Feature.UNLIMITED_TOPICS) else 3,
         "topics": list(
             session.scalars(
                 select(UserTopic.topic)
@@ -74,7 +76,7 @@ def save_topics(session: Session, identity: Identity, update: TopicsUpdate):
     # Serialize replacements for one user, so concurrent saves cannot combine
     # two valid selections into an invalid free-tier selection.
     user = session.scalar(select(User).where(User.id == identity.id).with_for_update())
-    if user.subscription_tier == "free" and len(update.topics) > 3:
+    if not entitlements_for(user).has(Feature.UNLIMITED_TOPICS) and len(update.topics) > 3:
         raise HTTPException(422, "Free accounts can follow up to 3 topics")
     session.execute(delete(UserTopic).where(UserTopic.user_id == user.id))
     session.add_all(UserTopic(user_id=user.id, topic=topic) for topic in update.topics)

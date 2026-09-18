@@ -238,6 +238,11 @@ def test_feed_filters_are_applied_before_total_and_pagination(customer_client, f
     assert customer_client.get("/feed?topic=llm&event_type=paper").json()["total"] == 1
     assert customer_client.get("/feed?q=%25").json()["total"] == 1
     assert customer_client.get("/feed?q=not-present").json()["total"] == 0
+    assert customer_client.get("/feed?window=all&topic=llm").status_code == 403
+    with factory() as session:
+        user = session.get(User, ALICE.id)
+        user.subscription_tier = "pro"
+        session.commit()
     assert customer_client.get("/feed?window=all&topic=llm").json()["total"] == 3
     assert customer_client.get("/feed?sort=latest").json()["items"][0]["id"] == str(UUID(int=10))
     as_user(BOB)
