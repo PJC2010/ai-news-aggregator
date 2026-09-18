@@ -48,7 +48,7 @@ export function EventCard({
           {featured && <span className="lead-label">LEADING THIS VIEW</span>}
         </div>
         <h2>
-          <Link href={`/events/${event.id}`}>
+          <Link href={`/dashboard/events/${event.id}`}>
             {event.primary_article.title}
           </Link>
         </h2>
@@ -65,7 +65,7 @@ export function EventCard({
             {event.cluster_size}{" "}
             {event.cluster_size === 1 ? "article" : "articles"}
           </span>
-          <Link className="read-analysis" href={`/events/${event.id}`}>
+          <Link className="read-analysis" href={`/dashboard/events/${event.id}`}>
             {event.analysis ? "Read analysis" : "View event"}
             <ArrowRight size={15} />
           </Link>

@@ -71,7 +71,7 @@ export default async function Overview({
               Following
             </Link>
           </div>
-          <form className="feed-filters" method="get" action="/">
+          <form className="feed-filters" method="get" action="/dashboard">
             {filters.following && (
               <input type="hidden" name="following" value="true" />
             )}

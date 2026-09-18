@@ -70,3 +70,23 @@ export type Filters = {
   event_type: string;
   page: number;
 };
+
+export type PublicEvent = {
+  id: string;
+  title: string;
+  summary: string | null;
+  significance_score: number | null;
+  event_type: string | null;
+  published_at: string;
+  primary_link: string;
+  source_count: number;
+  coverage?: { title: string; source: string; url: string }[];
+  coverage_limit?: number;
+};
+export type PublicFeed = {
+  total: number;
+  limit: number;
+  offset: number;
+  as_of: string;
+  items: PublicEvent[];
+};

@@ -25,7 +25,7 @@ export default async function EventDetail({
   const coverage = event.coverage || [];
   return (
     <div className="detail-page">
-      <Link href="/" className="back-link">
+      <Link href="/dashboard" className="back-link">
         <ArrowLeft size={16} />
         Back to overview
       </Link>

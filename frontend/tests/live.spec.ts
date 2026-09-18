@@ -37,7 +37,7 @@ test("real Next.js to FastAPI flow persists only verified-user preferences", asy
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await signIn(context, 1);
-  await page.goto("/");
+  await page.goto("/dashboard");
   await expect(page.locator("article.event-card")).toHaveCount(3);
   await expect(page.getByText("Demo workspace", { exact: true })).toHaveCount(
     0,
@@ -58,7 +58,7 @@ test("real Next.js to FastAPI flow persists only verified-user preferences", asy
   await expect(
     page.getByRole("checkbox", { name: "Language models" }),
   ).toBeChecked();
-  await page.goto("/?following=true");
+  await page.goto("/dashboard?following=true");
   await expect(page.locator("article.event-card")).toHaveCount(2);
   const bobContext = await browser.newContext();
   await signIn(bobContext, 2);
@@ -67,7 +67,7 @@ test("real Next.js to FastAPI flow persists only verified-user preferences", asy
   await expect(bob.getByText("bob@example.com", { exact: true })).toBeVisible();
   await expect(bob.getByRole("checkbox", { checked: true })).toHaveCount(0);
   await bobContext.close();
-  await page.goto("/?q=fixture-offline");
+  await page.goto("/dashboard?q=fixture-offline");
   await expect(
     page.getByRole("heading", { name: "We couldn’t load this view." }),
   ).toBeVisible();
@@ -79,7 +79,7 @@ test("real Next.js to FastAPI flow persists only verified-user preferences", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page).toHaveURL(/\/login/);
-  await page.goto("/");
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login/);
 });
 
@@ -87,7 +87,7 @@ test("configured live workspace rejects absent and invalid sessions", async ({
   page,
   context,
 }) => {
-  await page.goto("/");
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login/);
   await context.addCookies([
     {
@@ -99,4 +99,16 @@ test("configured live workspace rejects absent and invalid sessions", async ({
   await page.goto("/settings");
   await expect(page).toHaveURL(/\/login/);
   await expect(page.locator("article.event-card")).toHaveCount(0);
+});
+
+test("visitors browse public pages without a Supabase session", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: /See what changed/ })).toBeVisible();
+  await expect(page.locator("article.public-event-card")).toHaveCount(3);
+  await page.getByRole("link", { name: "Browse the public feed" }).click();
+  await expect(page).toHaveURL(/\/feed/);
+  await expect(page.locator("article.public-event-card")).not.toHaveCount(0);
+  await page.locator("article.public-event-card h2 a").first().click();
+  await expect(page).toHaveURL(/\/events\//);
+  await expect(page.getByRole("heading", { name: "Source coverage" })).toBeVisible();
 });

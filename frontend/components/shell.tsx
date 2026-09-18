@@ -11,9 +11,9 @@ import {
 import { isDemo } from "@/lib/api";
 import { signOut } from "@/app/actions";
 
-export function Brand() {
+export function Brand({ href = "/dashboard" }: { href?: string }) {
   return (
-    <Link href="/" className="brand">
+    <Link href={href} className="brand">
       <span className="brand-icon">
         <Radio size={22} strokeWidth={2.3} />
       </span>
@@ -32,12 +32,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Brand />
         <div className="workspace-label">AI INTELLIGENCE</div>
         <nav aria-label="Main navigation">
-          <Link href="/">
+          <Link href="/dashboard">
             <Compass size={19} />
             Overview
             <ArrowUpRight size={14} className="nav-arrow" />
           </Link>
-          <Link href="/?following=true">
+          <Link href="/dashboard?following=true">
             <Sparkles size={19} />
             Following
           </Link>
