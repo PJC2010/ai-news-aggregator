@@ -4,9 +4,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, authConfigured } from "./supabase/server";
 import { demoFeed, demoEvents, demoProfile } from "./demo";
+import { isDemoMode } from "./runtime";
 import type { Feed, Filters, NewsEvent, Profile } from "./types";
 
-export const isDemo = () => process.env.DASHBOARD_DEMO_MODE === "true";
+export const isDemo = isDemoMode;
 export class ApiError extends Error {
   constructor(
     public status: number,

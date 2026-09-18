@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { demoEvents } from "./demo";
+import { isDemoMode } from "./runtime";
 import type { PublicEvent, PublicFeed } from "./types";
 
 const validId = (id: string) =>
@@ -40,7 +41,7 @@ async function publicBackend<T>(path: string): Promise<T> {
 export const getPublicFeed = cache(async (page = 1): Promise<PublicFeed> => {
   const safePage = Number.isSafeInteger(page) && page > 0 ? Math.min(page, 834) : 1;
   const limit = 12;
-  if (process.env.DASHBOARD_DEMO_MODE === "true") {
+  if (isDemoMode()) {
     const offset = (safePage - 1) * limit;
     return {
       total: demoEvents.length,
@@ -55,7 +56,7 @@ export const getPublicFeed = cache(async (page = 1): Promise<PublicFeed> => {
 
 export const getPublicEvent = cache(async (id: string): Promise<PublicEvent | null> => {
   if (!validId(id)) return null;
-  if (process.env.DASHBOARD_DEMO_MODE === "true") {
+  if (isDemoMode()) {
     const event = demoEvents.find((item) => item.id === id);
     return event ? fromDemo(event) : null;
   }

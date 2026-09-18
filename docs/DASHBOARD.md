@@ -24,6 +24,13 @@ cookie. It never contacts FastAPI, Supabase, or an LLM provider. Live request er
 never fall back to demo content. A production preview can also use `npm run build`
 followed by `npm start`; the start script packages the standalone static assets.
 
+Demo mode is also the safe default when `DASHBOARD_DEMO_MODE` is absent. This
+keeps a new Vercel deployment usable before its server-side environment variables
+are configured, instead of trying to reach the development-only
+`http://127.0.0.1:8000` fallback from a serverless function. To deploy live data,
+set `DASHBOARD_DEMO_MODE=false`, `BACKEND_URL` to the public HTTPS API origin, and
+the Supabase settings below in every Vercel environment that should use them.
+
 ## Connect to the real pipeline
 
 1. Create or select a Supabase project with email authentication enabled. Set its

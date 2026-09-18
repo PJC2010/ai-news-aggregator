@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { feedHref, parseFilters, safeUrl } from "../lib/format.ts";
+import { isDemoMode } from "../lib/runtime.ts";
+
+test("an unconfigured deployment defaults safely to demo mode", () => {
+  assert.equal(isDemoMode({}), true);
+  assert.equal(isDemoMode({ DASHBOARD_DEMO_MODE: "true" }), true);
+  assert.equal(isDemoMode({ DASHBOARD_DEMO_MODE: "false" }), false);
+});
 
 test("source links reject executable and credential-bearing URLs", () => {
   for (const url of [
