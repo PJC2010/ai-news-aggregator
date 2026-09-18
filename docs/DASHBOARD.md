@@ -93,11 +93,12 @@ DeepSeek credentials.
 - `GET /me`, `PUT /me/topics`, `GET /feed`, and `GET /feed/{id}` are customer
   endpoints. Existing `/clusters` and `/internal/*` remain operator-only inspection
   endpoints. This is the web dashboard API, not the deferred developer API product.
-- Profile IDs come from verified Supabase identity. Callers cannot choose a user ID
-  or subscription tier. Preferences are scoped by that ID. Replacements are
-  transactional and serialize on the profile row; free accounts have a server-side
-  three-topic limit. The database tier is authoritative. No paid upgrade flow or
-  payment entitlement is created by this milestone.
+- Profile IDs come from verified Supabase identity. Callers cannot choose a user ID,
+  price, or subscription tier. Supabase user metadata is identity-provider data, not
+  authorization data. Preferences are scoped by the verified ID. The application
+  database is the sole entitlement authority; a reusable entitlement service applies
+  topic, full-analysis, archive, alerts, and future API-quota policy. Free accounts
+  have a server-side three-topic limit. Pro accounts receive all of those capabilities.
 - Customer payloads omit provider diagnostics and raw observation metadata.
   Authenticated responses are private and uncached. Source content renders as
   React text, and links accept only HTTP(S) URLs without embedded credentials.
@@ -146,12 +147,66 @@ The backend suite covers Auth validation, tenant isolation, tier escalation
 attempts, free-topic limits, filtering, and migration metadata. GitHub Actions also
 runs real PostgreSQL/pgvector migration checks and builds both containers.
 
+## Billing operations and reconciliation
+
+Set `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, and `STRIPE_WEBHOOK_SECRETS` only on
+the API service. Register `POST /billing/webhook` in Stripe and subscribe to
+`customer.subscription.created`, `.updated`, and `.deleted`. Authenticated clients
+call `POST /billing/checkout` and `POST /billing/portal` without a tier, price, user
+ID, customer ID, or redirect URL; all ownership and product choices are supplied by
+the server. Stripe signing is checked against the untouched request bytes with a
+five-minute replay tolerance. Event IDs are durably unique and older subscription
+snapshots cannot overwrite newer state.
+
+The persisted policy is explicit:
+
+- `active` and `trialing` grant pro access until their current period/trial end;
+- `past_due` retains pro access for the configured, bounded
+  `STRIPE_PAST_DUE_GRACE_DAYS` (three days by default), after which the common
+  entitlement service treats the account as free even before a later webhook;
+- `canceled` retains access only when Stripe reports a future paid-through period
+  end, then downgrades automatically; cancellation without future paid time,
+  `unpaid`, `incomplete`, `incomplete_expired`, and `paused` downgrade immediately.
+
+### Secret rotation
+
+1. Create a second webhook signing secret/endpoint secret in Stripe. Put both values
+   in `STRIPE_WEBHOOK_SECRETS`, comma separated, deploy, and send a test event.
+2. Switch Stripe delivery to the new secret. Keep both for at least the maximum
+   webhook retry window used by the account and confirm deliveries verify normally.
+3. Remove the old value and redeploy. Rotate `STRIPE_SECRET_KEY` independently by
+   deploying the new restricted key before revoking the old one. Never log either
+   secret or copy it to the frontend.
+
+### Stripe-to-database reconciliation
+
+Run reconciliation after webhook downtime, deployment incidents, secret rotation,
+or as a scheduled daily audit:
+
+1. Export/list all relevant Stripe subscriptions, including canceled and past-due
+   records, and compare customer ID, subscription ID, status, price, and current
+   period end with `users`. Also flag duplicate customer/subscription IDs (the
+   database uniqueness constraints should reject these) and Stripe customers with
+   no application user.
+2. For every difference, retrieve the subscription directly from Stripe. Confirm
+   its customer maps to the existing `users.stripe_customer_id`; **never** map by
+   email or untrusted metadata and never create an entitlement from a browser value.
+3. Use Stripe's webhook-event resend for the subscription's most recent event. The
+   normal verified, idempotent handler then applies the same ordering and entitlement
+   policy as live delivery. If the event is outside Stripe's retention window, use a
+   narrowly scoped operator script to write the retrieved snapshot and its Stripe
+   `created` timestamp in one transaction, following the webhook service logic.
+4. Re-run the comparison. Investigate unmatched customers rather than attaching
+   them automatically, confirm expired grace periods evaluate as free, and retain an
+   audit record of manual repairs. `stripe_events` is a delivery receipt ledger, not
+   a substitute for comparing current Stripe subscription state.
+
 ## Remaining delivery work
 
 Live Supabase email delivery and a real account session require project
 configuration; the implementation environment uses a test identity service.
-Scheduled daily digests, email integration for those digests, Stripe subscriptions,
-and real-time alerts are still pending. Existing source-coverage and editorial
+Scheduled daily digests, email integration for those digests, and real-time alerts
+are still pending. Existing source-coverage and editorial
 quality follow-ups in the handoff remain relevant. No public deployment is created.
 
 Implementation references: [Supabase SSR clients and session refresh](https://supabase.com/docs/guides/auth/server-side/creating-a-client?queryGroups=framework&framework=nextjs),

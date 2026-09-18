@@ -187,6 +187,12 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     email: Mapped[str] = mapped_column(String(320))
     subscription_tier: Mapped[str] = mapped_column(String(20), default="free")
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), unique=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), unique=True)
+    stripe_subscription_status: Mapped[str | None] = mapped_column(String(30))
+    stripe_price_id: Mapped[str | None] = mapped_column(String(255))
+    entitlement_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    stripe_state_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -196,3 +202,13 @@ class UserTopic(Base):
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     topic: Mapped[str] = mapped_column(String(60), primary_key=True)
+
+
+class StripeEvent(Base):
+    """Processed webhook receipt; the unique provider ID makes delivery idempotent."""
+
+    __tablename__ = "stripe_events"
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    event_type: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
