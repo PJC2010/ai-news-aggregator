@@ -86,5 +86,5 @@ export function feedHref(
     if (value !== "" && value !== false && !(key === "page" && value === 1))
       params.set(key, String(value));
   });
-  return `/?${params.toString()}`;
+  return `/dashboard?${params.toString()}`;
 }

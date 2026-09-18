@@ -4,9 +4,9 @@ test("live workspace fails closed without authentication configuration", async (
   page,
 }) => {
   for (const path of [
-    "/",
+    "/dashboard",
     "/settings",
-    "/events/00000000-0000-4000-8000-000000000010",
+    "/dashboard/events/00000000-0000-4000-8000-000000000010",
   ]) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login/);

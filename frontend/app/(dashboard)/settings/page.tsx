@@ -9,7 +9,7 @@ export default async function Settings() {
   const profile = await getProfile();
   return (
     <div className="settings-page">
-      <Link href="/" className="back-link">
+      <Link href="/dashboard" className="back-link">
         <ArrowLeft size={16} />
         Back to overview
       </Link>

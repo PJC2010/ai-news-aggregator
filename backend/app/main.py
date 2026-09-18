@@ -45,6 +45,8 @@ async def private_responses(request, call_next):
     if request.url.path.startswith(("/me", "/feed", "/clusters", "/internal")):
         response.headers["Cache-Control"] = "private, no-store"
         response.headers["Vary"] = "Authorization, X-Operator-Key"
+    elif request.url.path.startswith("/public/"):
+        response.headers["Cache-Control"] = "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
     return response
 
 
@@ -94,6 +96,79 @@ def customer_payload(payload):
     for source in payload.get("coverage", []):
         source.pop("signals", None)
     return payload
+
+
+PUBLIC_COVERAGE_LIMIT = 10
+
+
+def public_event_payload(session: Session, cluster: Cluster, *, detail: bool = False):
+    """Serialize the deliberately small, stable public event contract.
+
+    Keep this separate from the customer serializer so adding subscriber fields to
+    the dashboard cannot accidentally publish them.
+    """
+    article = session.get(Article, cluster.primary_article_id)
+    result = {
+        "id": cluster.id,
+        "title": article.title,
+        "summary": cluster.summary,
+        "significance_score": cluster.significance_score,
+        "event_type": cluster.event_type,
+        "published_at": cluster.latest_published_at,
+        "primary_link": article.canonical_url,
+        "source_count": cluster.cluster_size,
+    }
+    if detail:
+        rows = session.execute(
+            select(Article, Source, Observation)
+            .join(ClusterArticle, ClusterArticle.article_id == Article.id)
+            .join(Observation, Observation.article_id == Article.id)
+            .join(Source, Source.id == Observation.source_id)
+            .where(ClusterArticle.cluster_id == cluster.id)
+            .order_by(Source.authority_score.desc(), Source.name, Article.id)
+            .limit(PUBLIC_COVERAGE_LIMIT)
+        ).all()
+        result["coverage"] = [
+            {"title": item.title, "source": source.name, "url": observation.url}
+            for item, source, observation in rows
+        ]
+        result["coverage_limit"] = PUBLIC_COVERAGE_LIMIT
+    return result
+
+
+@app.get("/public/feed")
+def public_feed(
+    session: Session = Depends(get_session),
+    limit: int = Query(12, ge=1, le=50),
+    offset: int = Query(0, ge=0, le=10000),
+):
+    now = datetime.now(UTC)
+    statement = select(Cluster).where(Cluster.latest_published_at <= now)
+    total = session.scalar(select(func.count()).select_from(statement.subquery()))
+    clusters = session.scalars(
+        statement.order_by(Cluster.latest_published_at.desc(), Cluster.id)
+        .offset(offset)
+        .limit(limit)
+    ).all()
+    return {
+        "items": [public_event_payload(session, cluster) for cluster in clusters],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "as_of": now,
+    }
+
+
+@app.get("/public/events/{cluster_id}")
+def public_event(cluster_id: UUID, session: Session = Depends(get_session)):
+    cluster = session.scalar(
+        select(Cluster).where(
+            Cluster.id == cluster_id, Cluster.latest_published_at <= datetime.now(UTC)
+        )
+    )
+    if not cluster:
+        raise HTTPException(404, "Event not found")
+    return public_event_payload(session, cluster, detail=True)
 
 
 @app.get("/feed")

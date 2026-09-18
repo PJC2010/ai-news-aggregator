@@ -5,7 +5,7 @@ test("feed, filters, pagination, and event detail work without browser errors", 
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
+  await page.goto("/dashboard");
   await expect(
     page.getByRole("heading", { name: "What matters in AI." }),
   ).toBeVisible();
@@ -77,7 +77,7 @@ test("topic changes persist, enforce limits, and change Following", async ({
   await expect(page.getByRole("status")).toContainText(
     "Sample preferences saved",
   );
-  await page.goto("/?following=true");
+  await page.goto("/dashboard?following=true");
   await expect(
     page.getByRole("heading", { name: "Choose your first topics" }),
   ).toBeVisible();
@@ -86,21 +86,21 @@ test("topic changes persist, enforce limits, and change Following", async ({
 test("missing analysis, unknown events, and responsive layout have honest states", async ({
   page,
 }) => {
-  await page.goto("/events/00000000-0000-4000-8000-000000000020");
+  await page.goto("/dashboard/events/00000000-0000-4000-8000-000000000020");
   await expect(
     page.getByRole("heading", { name: "Analysis is not ready yet" }),
   ).toBeVisible();
   await expect(page.getByText("Not yet assessed", { exact: true })).toHaveCount(
     2,
   );
-  await page.goto("/events/00000000-0000-4000-8000-999999999999");
+  await page.goto("/dashboard/events/00000000-0000-4000-8000-999999999999");
   await expect(
     page.getByRole("heading", { name: "This event isn’t here." }),
   ).toBeVisible();
   for (const route of [
-    "/",
+    "/dashboard",
     "/settings",
-    "/events/00000000-0000-4000-8000-000000000010",
+    "/dashboard/events/00000000-0000-4000-8000-000000000010",
     "/login",
   ]) {
     await page.goto(route);
