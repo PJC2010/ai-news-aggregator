@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isDemoMode } from "@/lib/runtime";
 
 const publicHits = new Map<string, { count: number; reset: number }>();
 const PUBLIC_PATH = /^(?:\/$|\/feed\/?$|\/events\/[^/]+\/?$|\/sitemap\.xml$)/;
@@ -25,7 +26,7 @@ export async function proxy(request: NextRequest) {
   }
   response.headers.set("Cache-Control", "private, no-store");
   if (
-    process.env.DASHBOARD_DEMO_MODE === "true" ||
+    isDemoMode() ||
     !process.env.SUPABASE_URL ||
     !process.env.SUPABASE_PUBLISHABLE_KEY
   )
